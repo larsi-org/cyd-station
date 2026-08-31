@@ -127,8 +127,13 @@ void setup() {
   }
 
   if (!parseServerUrl(config.baseUrl, apiHost, apiBasePath)) {
-    apiHost = "larsi.org";
-    apiBasePath = "/weather/";
+    // Shouldn't happen -- CydConfig's own default is always a well-formed URL, and the
+    // portal validates any user-submitted one with this same function before saving. If the
+    // saved value is somehow broken anyway, treat it like incomplete config rather than
+    // silently guessing a server this device wasn't actually told to use.
+    drawStatus("Invalid server URL, opening setup portal...");
+    delay(2000);
+    runCydSetupPortal();  // never returns -- restarts the device once the form is saved
   }
 
   syncTime();
