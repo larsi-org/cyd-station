@@ -4,6 +4,13 @@
 // station's channel list and latest readings, and shows them on the CYD's built-in 2.8"
 // ILI9341 screen. No touch, no audio -- just a display client.
 //
+// This sketch and its sibling WeatherStation are deliberately near-identical: both sections'
+// APIs follow the same shape (json/sensors.php?prefix=X for channel metadata,
+// csv/current.php?prefix=X for latest values as channel,value,epoch rows), so both sketches
+// share the same fetch/parse/render structure -- only the API base path and default station
+// differ. See this repo's README for why the wire parameter stayed `prefix` rather than
+// `station`.
+//
 // Config lives in secrets.h (gitignored) -- copy secrets.h.example to secrets.h and fill in
 // your WiFi credentials and the station prefix to display (see https://larsi.org/sensors/ for
 // the station list).
@@ -21,8 +28,11 @@
 #include "CertBundle.h"
 #include "secrets.h"
 
+#define API_BASE "/sensors"
+
 // --- CYD pin mapping (ESP32-2432S028R) ------------------------------------------------------
-// Same wiring as this repo's WeatherStation sketch -- see its header comment for why.
+// The display is on the "HSPI-pattern" pins (14/13/12), not the ESP32's default VSPI pins, so
+// it needs its own SPIClass instance rather than the implicit default one.
 #define TFT_SCLK  14
 #define TFT_MISO  12
 #define TFT_MOSI  13
@@ -41,24 +51,17 @@ const unsigned long REFRESH_INTERVAL_MS = 60UL * 1000UL;  // 1 minute
 unsigned long lastRefresh = 0;
 bool firstRefresh = true;
 
-// A station's device/sensor layout barely ever changes, so metadata (channel list, labels,
-// units) is only re-fetched occasionally, on a much longer cycle than live readings.
+// A station's channel layout barely ever changes, so metadata (channel list, labels, units)
+// is only re-fetched occasionally, on a much longer cycle than live readings.
 const unsigned long METADATA_INTERVAL_MS = 60UL * 60UL * 1000UL;  // 1 hour
 unsigned long lastMetadataFetch = 0;
 bool haveMetadata = false;
-
-// How far back to look for each channel's latest reading. Generous on purpose: this is
-// processed as a stream (one CSV row at a time, always overwriting a channel's "latest so
-// far"), so a wide window costs parse time, not RAM, and protects against a sensor that only
-// logs sparsely still showing up.
-const unsigned long READING_WINDOW_SECONDS = 6UL * 60UL * 60UL;  // 6 hours
 
 const int MAX_SENSORS = 8;  // a station can have up to 256 channels; only the first
                              // MAX_SENSORS (in channel order) fit this screen
 
 struct SensorMeta {
   int channel = -1;
-  String label;     // owning device's name
   String property;  // e.g. "Temperature"
   String unit;
 };
@@ -115,8 +118,8 @@ void loop() {
   unsigned long now = millis();
 
   if (!haveMetadata || now - lastMetadataFetch >= METADATA_INTERVAL_MS) {
-    if (!haveMetadata) drawStatus("Fetching " SENSOR_PREFIX " info...");
-    if (fetchSensorMetadata()) {
+    if (!haveMetadata) drawStatus("Fetching " STATION_PREFIX " info...");
+    if (fetchStationMetadata()) {
       haveMetadata = true;
       lastMetadataFetch = now;
     }
@@ -175,45 +178,13 @@ bool httpsGetLines(const String &path, void (*onLine)(const String &line)) {
   return true;
 }
 
-// A minimal quote-aware CSV splitter -- see WeatherStation's sketch for the same helper and
-// why plain String.split() on ',' isn't safe here.
-int splitCsvLine(const String &line, String out[], int maxFields) {
-  int field = 0;
-  int i = 0;
-  int len = line.length();
-  while (i < len && field < maxFields) {
-    String value = "";
-    if (line[i] == '"') {
-      i++;
-      while (i < len) {
-        if (line[i] == '"') {
-          if (i + 1 < len && line[i + 1] == '"') {
-            value += '"';
-            i += 2;
-          } else {
-            i++;
-            break;
-          }
-        } else {
-          value += line[i++];
-        }
-      }
-    } else {
-      while (i < len && line[i] != ',') value += line[i++];
-    }
-    out[field++] = value;
-    if (i < len && line[i] == ',') i++;
-  }
-  return field;
-}
-
-bool fetchSensorMetadata() {
+bool fetchStationMetadata() {
   WiFiClientSecure client = connectApi();
   if (!client.connected()) {
     Serial.println("Connect failed");
     return false;
   }
-  String path = String("/sensors/json/sensors.php?prefix=") + SENSOR_PREFIX;
+  String path = String(API_BASE) + "/json/sensors.php?prefix=" + STATION_PREFIX;
   client.print(String("GET ") + path + " HTTP/1.1\r\n" +
                "Host: larsi.org\r\n" +
                "User-Agent: cyd-larsi-org-sensors-station\r\n" +
@@ -230,14 +201,13 @@ bool fetchSensorMetadata() {
     return false;
   }
 
-  stationLabel = doc["label"] | SENSOR_PREFIX;
+  stationLabel = doc["label"] | STATION_PREFIX;
 
   sensorCount = 0;
   JsonArray arr = doc["sensors"];
   for (JsonObject s : arr) {
     if (sensorCount >= MAX_SENSORS) break;
     sensors[sensorCount].channel = s["value"] | -1;
-    sensors[sensorCount].label = String((const char *)(s["label"] | ""));
     sensors[sensorCount].property = String((const char *)(s["property"] | ""));
     sensors[sensorCount].unit = String((const char *)(s["unit"] | ""));
     sensorCount++;
@@ -252,31 +222,25 @@ int findSensorIndex(int channel) {
   return -1;
 }
 
-void onDataLine(const String &line) {
-  // Columns: t,s,v  (epoch, channel, value) -- ordered by epoch, so later rows always
-  // overwrite earlier ones for the same channel, leaving the true latest after the stream.
-  String fields[3];
-  int count = splitCsvLine(line, fields, 3);
-  if (count < 3) return;
+void onCurrentLine(const String &line) {
+  // Columns: channel,value,epoch -- always plain numbers, no CSV quoting to worry about.
+  int c1 = line.indexOf(',');
+  int c2 = line.indexOf(',', c1 + 1);
+  if (c1 < 0 || c2 < 0) return;
 
-  int channel = fields[1].toInt();
+  int channel = line.substring(0, c1).toInt();
   int idx = findSensorIndex(channel);
   if (idx < 0) return;
 
-  readings[idx].epoch = strtoul(fields[0].c_str(), nullptr, 10);
-  readings[idx].value = fields[2].toFloat();
+  readings[idx].value = line.substring(c1 + 1, c2).toFloat();
+  readings[idx].epoch = strtoul(line.substring(c2 + 1).c_str(), nullptr, 10);
   readings[idx].valid = true;
 }
 
 void fetchLatestReadings() {
   for (int i = 0; i < sensorCount; i++) readings[i] = SensorReading();
-
-  unsigned long nowEpoch = time(nullptr);
-  unsigned long tMin = nowEpoch > READING_WINDOW_SECONDS ? nowEpoch - READING_WINDOW_SECONDS : 0;
-
-  String path = String("/sensors/csv/data.php?prefix=") + SENSOR_PREFIX +
-                "&t_min=" + String(tMin) + "&t_max=" + String(nowEpoch);
-  httpsGetLines(path, onDataLine);
+  String path = String(API_BASE) + "/csv/current.php?prefix=" + STATION_PREFIX;
+  httpsGetLines(path, onCurrentLine);
 }
 
 // --- Display -----------------------------------------------------------------------------
@@ -312,7 +276,7 @@ void drawSensors() {
     tft.setTextSize(1);
     tft.setCursor(10, y);
     tft.setTextColor(ILI9341_LIGHTGREY);
-    tft.print(sensors[i].property.length() ? sensors[i].property : sensors[i].label);
+    tft.print(sensors[i].property);
 
     tft.setCursor(220, y);
     if (readings[i].valid) {

@@ -1,26 +1,38 @@
 // Cheap Yellow Display (ESP32-2432S028R) weather station.
 //
 // Polls larsi.org's weather API (github.com/larsi-org/html, weather/ section) for one
-// station's latest observed conditions and shows them on the CYD's built-in 2.8" ILI9341
-// screen. No touch, no audio -- just a display client.
+// station's channel list and latest readings, and shows them on the CYD's built-in 2.8"
+// ILI9341 screen. No touch, no audio -- just a display client.
+//
+// This sketch and its sibling SensorsStation are deliberately near-identical: both sections'
+// APIs follow the same shape (json/sensors.php?prefix=X for channel metadata,
+// csv/current.php?prefix=X for latest values as channel,value,epoch rows), so both sketches
+// share the same fetch/parse/render structure -- only the API base path and default station
+// differ. See this repo's README for why the wire parameter stayed `prefix` rather than
+// `station`.
 //
 // Config lives in secrets.h (gitignored) -- copy secrets.h.example to secrets.h and fill in
 // your WiFi credentials and the ICAO station prefix to display (see
 // https://larsi.org/weather/ for the station list).
+//
+// Requires the ArduinoJson library (Library Manager -> "ArduinoJson", tested against 7.x).
 
+#include <ArduinoJson.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_ILI9341.h>
 #include <SPI.h>
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
+#include <time.h>
 
 #include "CertBundle.h"
 #include "secrets.h"
 
+#define API_BASE "/weather"
+
 // --- CYD pin mapping (ESP32-2432S028R) ------------------------------------------------------
-// Same wiring this repo's sibling projects landed on (see the "make/cyd/" page's yoRadio
-// section): the display is on the "HSPI-pattern" pins (14/13/12), not the ESP32's default
-// VSPI pins, so it needs its own SPIClass instance rather than the implicit default one.
+// The display is on the "HSPI-pattern" pins (14/13/12), not the ESP32's default VSPI pins, so
+// it needs its own SPIClass instance rather than the implicit default one.
 #define TFT_SCLK  14
 #define TFT_MISO  12
 #define TFT_MOSI  13
@@ -29,8 +41,7 @@
 #define TFT_RST   -1  // tied to EN
 #define TFT_BL    21  // backlight, driven HIGH for full brightness
 
-// Landscape, USB ports to the right. Flip to 3 if your board is mounted upside down.
-#define SCREEN_ROTATION 1
+#define SCREEN_ROTATION 1  // landscape, USB ports to the right; use 3 if mounted upside down
 
 SPIClass hspi(HSPI);
 Adafruit_ILI9341 tft(&hspi, TFT_DC, TFT_CS, TFT_RST);
@@ -40,22 +51,32 @@ const unsigned long REFRESH_INTERVAL_MS = 5UL * 60UL * 1000UL;  // 5 minutes
 unsigned long lastRefresh = 0;
 bool firstRefresh = true;
 
-// --- Station metadata (fetched once, rarely changes) ----------------------------------------
-String stationLabel = "";
-float stationLat = 0, stationLng = 0, stationEle = 0;
+// A station's channel layout barely ever changes, so metadata (channel list, labels, units)
+// is only re-fetched occasionally, on a much longer cycle than live readings.
+const unsigned long METADATA_INTERVAL_MS = 60UL * 60UL * 1000UL;  // 1 hour
+unsigned long lastMetadataFetch = 0;
 bool haveMetadata = false;
 
-// --- Live reading, parsed out of weather/csv/current.php -------------------------------------
-struct WeatherReading {
-  bool valid = false;
-  float temperatureC = 0;
-  float dewPointC = 0;
-  float humidityPct = 0;
-  float pressureHpa = 0;
-  float windDirDeg = 0;
-  float windSpeedMs = 0;
-  float clouds10th = 0;
+const int MAX_SENSORS = 8;  // weather stations report exactly 7 (channels 0-6); sensors
+                             // stations can have more than fit the screen -- same cap either
+                             // way, for the same reason.
+
+struct SensorMeta {
+  int channel = -1;
+  String property;  // e.g. "Temperature"
+  String unit;
 };
+
+struct SensorReading {
+  bool valid = false;
+  float value = 0;
+  unsigned long epoch = 0;
+};
+
+String stationLabel;
+SensorMeta sensors[MAX_SENSORS];
+int sensorCount = 0;
+SensorReading readings[MAX_SENSORS];
 
 void setup() {
   Serial.begin(115200);
@@ -85,50 +106,68 @@ void loop() {
       delay(2000);
       return;
     }
+    syncTime();
   }
 
-  if (!haveMetadata) {
-    haveMetadata = fetchStationMetadata();
+  if (time(nullptr) < 1700000000) {  // not yet NTP-synced
+    drawStatus("Waiting for time sync...");
+    syncTime();
+    delay(1000);
+    return;
   }
 
   unsigned long now = millis();
-  if (firstRefresh || now - lastRefresh >= REFRESH_INTERVAL_MS) {
+
+  if (!haveMetadata || now - lastMetadataFetch >= METADATA_INTERVAL_MS) {
+    if (!haveMetadata) drawStatus("Fetching " STATION_PREFIX " info...");
+    if (fetchStationMetadata()) {
+      haveMetadata = true;
+      lastMetadataFetch = now;
+    }
+  }
+
+  if (haveMetadata && (firstRefresh || now - lastRefresh >= REFRESH_INTERVAL_MS)) {
     firstRefresh = false;
     lastRefresh = now;
-    if (!haveMetadata) drawStatus("Fetching " WEATHER_PREFIX " info...");
-    WeatherReading reading = fetchCurrentReading();
-    if (reading.valid) {
-      drawWeather(reading);
-    } else {
-      drawStatus("No data for station " WEATHER_PREFIX);
-    }
+    fetchLatestReadings();
+    drawSensors();
   }
 
   delay(1000);
 }
 
+void syncTime() {
+  configTime(0, 0, "pool.ntp.org", "time.nist.gov");
+}
+
 // --- Networking --------------------------------------------------------------------------
 
-bool httpsGetLines(const String &path, void (*onLine)(const String &line)) {
+WiFiClientSecure connectApi() {
   WiFiClientSecure client;
   client.setCACertBundle(kServerCertBundle, kServerCertBundleLen);
+  client.connect("larsi.org", 443);
+  return client;
+}
 
-  if (!client.connect("larsi.org", 443)) {
-    Serial.println("Connect failed");
-    return false;
-  }
-
-  client.print(String("GET ") + path + " HTTP/1.1\r\n" +
-               "Host: larsi.org\r\n" +
-               "User-Agent: cyd-larsi-org-weather-station\r\n" +
-               "Connection: close\r\n\r\n");
-
-  // Skip HTTP headers.
+// Reads and discards HTTP response headers, leaving the stream positioned at the body.
+void skipHttpHeaders(WiFiClientSecure &client) {
   while (client.connected()) {
     String line = client.readStringUntil('\n');
     if (line == "\r") break;
   }
+}
 
+bool httpsGetLines(const String &path, void (*onLine)(const String &line)) {
+  WiFiClientSecure client = connectApi();
+  if (!client.connected()) {
+    Serial.println("Connect failed");
+    return false;
+  }
+  client.print(String("GET ") + path + " HTTP/1.1\r\n" +
+               "Host: larsi.org\r\n" +
+               "User-Agent: cyd-larsi-org-weather-station\r\n" +
+               "Connection: close\r\n\r\n");
+  skipHttpHeaders(client);
   while (client.connected() || client.available()) {
     if (client.available()) {
       String line = client.readStringUntil('\n');
@@ -140,108 +179,69 @@ bool httpsGetLines(const String &path, void (*onLine)(const String &line)) {
   return true;
 }
 
-// A minimal quote-aware CSV splitter -- station descriptions can contain commas, and
-// fputcsv() (the server side) quotes those fields, so a plain String.split on ',' would
-// misalign every column after one.
-int splitCsvLine(const String &line, String out[], int maxFields) {
-  int field = 0;
-  int i = 0;
-  int len = line.length();
-  while (i < len && field < maxFields) {
-    String value = "";
-    if (line[i] == '"') {
-      i++;
-      while (i < len) {
-        if (line[i] == '"') {
-          if (i + 1 < len && line[i + 1] == '"') {
-            value += '"';
-            i += 2;
-          } else {
-            i++;
-            break;
-          }
-        } else {
-          value += line[i++];
-        }
-      }
-    } else {
-      while (i < len && line[i] != ',') value += line[i++];
-    }
-    out[field++] = value;
-    if (i < len && line[i] == ',') i++;
-  }
-  return field;
-}
-
-bool g_metadataOk = false;
-String g_metadataLabel;
-float g_metadataLat = 0, g_metadataLng = 0, g_metadataEle = 0;
-
-void onMetadataLine(const String &line) {
-  // json/sensors.php returns one JSON object, not one-per-line -- but ArduinoJson isn't a
-  // dependency here, so this project just does a cheap targeted extraction instead of a full
-  // parse. Good enough for the handful of scalar fields this needs.
-  int labelIdx = line.indexOf("\"label\":\"");
-  if (labelIdx >= 0) {
-    int start = labelIdx + 9;
-    int end = line.indexOf('"', start);
-    if (end > start) g_metadataLabel = line.substring(start, end);
-  }
-  auto extractFloat = [&](const char *key) -> float {
-    String k = String("\"") + key + "\":";
-    int idx = line.indexOf(k);
-    if (idx < 0) return 0;
-    int start = idx + k.length();
-    int end = start;
-    while (end < (int)line.length() &&
-           (isDigit(line[end]) || line[end] == '-' || line[end] == '.')) {
-      end++;
-    }
-    return line.substring(start, end).toFloat();
-  };
-  if (line.indexOf("\"lat\":") >= 0) g_metadataLat = extractFloat("lat");
-  if (line.indexOf("\"lng\":") >= 0) g_metadataLng = extractFloat("lng");
-  if (line.indexOf("\"ele\":") >= 0) g_metadataEle = extractFloat("ele");
-  g_metadataOk = g_metadataLabel.length() > 0;
-}
-
 bool fetchStationMetadata() {
-  g_metadataOk = false;
-  g_metadataLabel = "";
-  httpsGetLines(String("/weather/json/sensors.php?prefix=") + WEATHER_PREFIX, onMetadataLine);
-  if (g_metadataOk) {
-    stationLabel = g_metadataLabel;
-    stationLat = g_metadataLat;
-    stationLng = g_metadataLng;
-    stationEle = g_metadataEle;
+  WiFiClientSecure client = connectApi();
+  if (!client.connected()) {
+    Serial.println("Connect failed");
+    return false;
   }
-  return g_metadataOk;
+  String path = String(API_BASE) + "/json/sensors.php?prefix=" + STATION_PREFIX;
+  client.print(String("GET ") + path + " HTTP/1.1\r\n" +
+               "Host: larsi.org\r\n" +
+               "User-Agent: cyd-larsi-org-weather-station\r\n" +
+               "Connection: close\r\n\r\n");
+  skipHttpHeaders(client);
+
+  JsonDocument doc;
+  DeserializationError err = deserializeJson(doc, client);
+  client.stop();
+
+  if (err) {
+    Serial.print("JSON parse failed: ");
+    Serial.println(err.c_str());
+    return false;
+  }
+
+  stationLabel = doc["label"] | STATION_PREFIX;
+
+  sensorCount = 0;
+  JsonArray arr = doc["sensors"];
+  for (JsonObject s : arr) {
+    if (sensorCount >= MAX_SENSORS) break;
+    sensors[sensorCount].channel = s["value"] | -1;
+    sensors[sensorCount].property = String((const char *)(s["property"] | ""));
+    sensors[sensorCount].unit = String((const char *)(s["unit"] | ""));
+    sensorCount++;
+  }
+  return sensorCount > 0;
 }
 
-WeatherReading g_reading;
+int findSensorIndex(int channel) {
+  for (int i = 0; i < sensorCount; i++) {
+    if (sensors[i].channel == channel) return i;
+  }
+  return -1;
+}
 
 void onCurrentLine(const String &line) {
-  // Columns: stationId,name,lat,lng,0,1,2,3,4,5,6
-  //          (temp, dewpoint, humidity, pressure, wind dir, wind speed, clouds)
-  String fields[11];
-  int count = splitCsvLine(line, fields, 11);
-  if (count < 11) return;
-  if (fields[0] != WEATHER_PREFIX) return;
+  // Columns: channel,value,epoch -- always plain numbers, no CSV quoting to worry about.
+  int c1 = line.indexOf(',');
+  int c2 = line.indexOf(',', c1 + 1);
+  if (c1 < 0 || c2 < 0) return;
 
-  g_reading.temperatureC = fields[4].toFloat();
-  g_reading.dewPointC = fields[5].toFloat();
-  g_reading.humidityPct = fields[6].toFloat();
-  g_reading.pressureHpa = fields[7].toFloat();
-  g_reading.windDirDeg = fields[8].toFloat();
-  g_reading.windSpeedMs = fields[9].toFloat();
-  g_reading.clouds10th = fields[10].toFloat();
-  g_reading.valid = fields[4].length() > 0;  // empty string = sensor missing/stale
+  int channel = line.substring(0, c1).toInt();
+  int idx = findSensorIndex(channel);
+  if (idx < 0) return;
+
+  readings[idx].value = line.substring(c1 + 1, c2).toFloat();
+  readings[idx].epoch = strtoul(line.substring(c2 + 1).c_str(), nullptr, 10);
+  readings[idx].valid = true;
 }
 
-WeatherReading fetchCurrentReading() {
-  g_reading = WeatherReading();
-  httpsGetLines("/weather/csv/current.php", onCurrentLine);
-  return g_reading;
+void fetchLatestReadings() {
+  for (int i = 0; i < sensorCount; i++) readings[i] = SensorReading();
+  String path = String(API_BASE) + "/csv/current.php?prefix=" + STATION_PREFIX;
+  httpsGetLines(path, onCurrentLine);
 }
 
 // --- Display -----------------------------------------------------------------------------
@@ -254,38 +254,47 @@ void drawStatus(const String &message) {
   tft.println(message);
 }
 
-void drawRow(int y, const String &label, const String &value, uint16_t color) {
-  tft.setTextSize(1);
-  tft.setTextColor(ILI9341_LIGHTGREY);
-  tft.setCursor(10, y);
-  tft.print(label);
-
-  tft.setTextSize(2);
-  tft.setTextColor(color);
-  tft.setCursor(10, y + 12);
-  tft.println(value);
+String formatAge(unsigned long epoch) {
+  if (epoch == 0) return "never";
+  long ageSeconds = (long)time(nullptr) - (long)epoch;
+  if (ageSeconds < 60) return String(ageSeconds) + "s ago";
+  if (ageSeconds < 3600) return String(ageSeconds / 60) + "m ago";
+  return String(ageSeconds / 3600) + "h ago";
 }
 
-void drawWeather(const WeatherReading &r) {
+void drawSensors() {
   tft.fillScreen(ILI9341_BLACK);
 
   tft.setTextColor(ILI9341_CYAN);
   tft.setTextSize(2);
   tft.setCursor(10, 6);
-  tft.println(stationLabel.length() ? stationLabel : String(WEATHER_PREFIX));
+  tft.println(stationLabel);
 
-  int y = 40;
-  const int rowHeight = 42;
+  int y = 34;
+  const int rowHeight = 25;
 
-  drawRow(y, "TEMPERATURE", String(r.temperatureC, 1) + " C", ILI9341_YELLOW);
-  y += rowHeight;
-  drawRow(y, "DEW POINT", String(r.dewPointC, 1) + " C", ILI9341_WHITE);
-  y += rowHeight;
-  drawRow(y, "HUMIDITY", String(r.humidityPct, 0) + " %", ILI9341_WHITE);
-  y += rowHeight;
-  drawRow(y, "PRESSURE", String(r.pressureHpa, 0) + " hPa", ILI9341_WHITE);
-  y += rowHeight;
-  drawRow(y, "WIND", String(r.windDirDeg, 0) + (char)247 + " @ " +
-                          String(r.windSpeedMs, 1) + " m/s",
-          ILI9341_WHITE);
+  for (int i = 0; i < sensorCount; i++) {
+    tft.setTextSize(1);
+    tft.setCursor(10, y);
+    tft.setTextColor(ILI9341_LIGHTGREY);
+    tft.print(sensors[i].property);
+
+    tft.setCursor(220, y);
+    if (readings[i].valid) {
+      tft.setTextColor(ILI9341_DARKGREY);
+      tft.print(formatAge(readings[i].epoch));
+    }
+
+    tft.setTextSize(2);
+    tft.setCursor(10, y + 9);
+    if (readings[i].valid) {
+      tft.setTextColor(ILI9341_YELLOW);
+      tft.print(String(readings[i].value, 1) + " " + sensors[i].unit);
+    } else {
+      tft.setTextColor(ILI9341_RED);
+      tft.print("no data");
+    }
+
+    y += rowHeight;
+  }
 }
