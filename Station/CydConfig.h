@@ -26,6 +26,10 @@ struct CydConfig {
   // json/sensors.php, latest values via csv/current.php) this device polls.
   String section;
 
+  // Display-only preference, unrelated to Wi-Fi/station completeness -- white background,
+  // darker text, instead of the default dark background. Doesn't gate hasStation()/hasWifi().
+  bool inverseDisplay = false;
+
   bool hasWifi() const { return ssids[0].length() > 0; }
 
   bool hasStation() const {

@@ -320,9 +320,29 @@ int totalPages() {
 
 // --- Display -----------------------------------------------------------------------------
 
+// Theme colors -- config.inverseDisplay swaps the default dark background for white, with a
+// separate set of darker text colors chosen for contrast/legibility against white rather than
+// just reusing the dark-mode palette (the default YELLOW/LIGHTGREY read fine on black but are
+// nearly invisible on white).
+uint16_t colorBg() { return config.inverseDisplay ? ILI9341_WHITE : ILI9341_BLACK; }
+uint16_t colorHeader() { return config.inverseDisplay ? tft.color565(0, 70, 140) : ILI9341_CYAN; }
+uint16_t colorMuted() {
+  return config.inverseDisplay ? tft.color565(140, 140, 140) : ILI9341_DARKGREY;
+}
+uint16_t colorLabel() {
+  return config.inverseDisplay ? tft.color565(60, 60, 60) : ILI9341_LIGHTGREY;
+}
+uint16_t colorValue() {
+  return config.inverseDisplay ? tft.color565(180, 120, 0) : ILI9341_YELLOW;
+}
+uint16_t colorError() { return ILI9341_RED; }  // reads fine on both backgrounds as-is
+uint16_t colorStatusText() {
+  return config.inverseDisplay ? tft.color565(40, 40, 40) : ILI9341_WHITE;
+}
+
 void drawStatus(const String &message) {
-  tft.fillScreen(ILI9341_BLACK);
-  tft.setTextColor(ILI9341_WHITE);
+  tft.fillScreen(colorBg());
+  tft.setTextColor(colorStatusText());
   tft.setTextSize(2);
   tft.setCursor(10, 100);
   tft.println(message);
@@ -337,16 +357,16 @@ String formatAge(unsigned long epoch) {
 }
 
 void drawSensors() {
-  tft.fillScreen(ILI9341_BLACK);
+  tft.fillScreen(colorBg());
 
-  tft.setTextColor(ILI9341_CYAN);
+  tft.setTextColor(colorHeader());
   tft.setTextSize(2);
   tft.setCursor(10, 6);
   tft.println(config.stationPrefix);
 
   if (totalPages() > 1) {
     tft.setTextSize(1);
-    tft.setTextColor(ILI9341_DARKGREY);
+    tft.setTextColor(colorMuted());
     tft.setCursor(180, 12);
     tft.print(String(currentPage + 1) + "/" + String(totalPages()));
   }
@@ -360,22 +380,22 @@ void drawSensors() {
   for (int i = first; i < last; i++) {
     tft.setTextSize(1);
     tft.setCursor(10, y);
-    tft.setTextColor(ILI9341_LIGHTGREY);
+    tft.setTextColor(colorLabel());
     tft.print(sensors[i].property);
 
     tft.setCursor(165, y);
     if (readings[i].valid) {
-      tft.setTextColor(ILI9341_DARKGREY);
+      tft.setTextColor(colorMuted());
       tft.print(formatAge(readings[i].epoch));
     }
 
     tft.setTextSize(2);
     tft.setCursor(10, y + 9);
     if (readings[i].valid) {
-      tft.setTextColor(ILI9341_YELLOW);
+      tft.setTextColor(colorValue());
       tft.print(String(readings[i].value, 1) + " " + sensors[i].unit);
     } else {
-      tft.setTextColor(ILI9341_RED);
+      tft.setTextColor(colorError());
       tft.print("no data");
     }
 
@@ -383,7 +403,7 @@ void drawSensors() {
   }
 
   tft.setTextSize(1);
-  tft.setTextColor(ILI9341_DARKGREY);
+  tft.setTextColor(colorMuted());
   tft.setCursor(10, 305);
   tft.print("Config: " + WiFi.localIP().toString());
 }

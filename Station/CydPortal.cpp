@@ -245,6 +245,13 @@ String buildStationFormPage() {
                     : existing.section.length() > 0 ? existing.section
                                                      : "weather";
 
+  // Checkbox args only appear at all when checked -- server.hasArg("section") tells apart a
+  // "Refresh Stations" GET reload (where an unchecked box should read as false) from the very
+  // first page load (no args at all, where an unchecked box should just mean "use the saved
+  // value").
+  bool cameFromReload = server.hasArg("section");
+  bool inverseDisplay = cameFromReload ? server.hasArg("inverseDisplay") : existing.inverseDisplay;
+
   std::vector<std::pair<String, String>> stations = fetchStationList(serverRoot, section);
 
   String stationOptions;
@@ -268,6 +275,8 @@ String buildStationFormPage() {
   page += "<style>body{font-family:sans-serif;max-width:420px;margin:2em auto;padding:0 1em}";
   page += "label{display:block;margin-top:1em;font-weight:bold}";
   page += "input,select{width:100%;padding:.4em;box-sizing:border-box;font-size:1em}";
+  page += "label.checkbox{display:flex;align-items:center;gap:.5em;font-weight:normal}";
+  page += "label.checkbox input{width:auto}";
   page += "button{margin-top:1.5em;margin-right:.5em;padding:.6em 1.2em;font-size:1em}";
   page += "</style></head><body>";
   page += "<h1>CYD Station Setup</h1>";
@@ -282,6 +291,8 @@ String buildStationFormPage() {
           ">Sensors</option>";
   page += "</select>";
   page += "<label>Station</label><select name=\"stationPrefix\">" + stationOptions + "</select>";
+  page += "<label class=\"checkbox\"><input type=\"checkbox\" name=\"inverseDisplay\"" +
+          String(inverseDisplay ? " checked" : "") + "> Inverse Display (white background)</label>";
   // "Refresh Stations" (GET, reloads with whatever Server Root/Section are currently chosen)
   // comes first in the DOM so it's what fires on Enter -- pressing Enter while editing Server
   // Root should re-fetch the list, not accidentally save before the station selection even
@@ -330,6 +341,7 @@ void handleStationSave() {
   config.serverRoot = serverRoot;
   config.section = section;
   config.stationPrefix = stationPrefix;
+  config.inverseDisplay = server.hasArg("inverseDisplay");  // absent entirely when unchecked
 
   saveCydConfig(config);
   server.send(200, "text/html", "<p>Saved. Rebooting...</p>");

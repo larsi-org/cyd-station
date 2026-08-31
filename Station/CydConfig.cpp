@@ -17,6 +17,7 @@ bool loadCydConfig(CydConfig &config) {
   config.stationPrefix = prefs.getString("stationPrefix", "");
   config.serverRoot = prefs.getString("serverRoot", "");
   config.section = prefs.getString("section", "");
+  config.inverseDisplay = prefs.getBool("inverseDisplay", false);
   prefs.end();
   return config.hasWifi();
 }
@@ -31,6 +32,7 @@ void saveCydConfig(const CydConfig &config) {
   prefs.putString("stationPrefix", config.stationPrefix);
   prefs.putString("serverRoot", config.serverRoot);
   prefs.putString("section", config.section);
+  prefs.putBool("inverseDisplay", config.inverseDisplay);
   prefs.end();
 }
 
