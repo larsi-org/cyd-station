@@ -41,7 +41,7 @@
 #define TFT_RST   -1  // tied to EN
 #define TFT_BL    21  // backlight, driven HIGH for full brightness
 
-#define SCREEN_ROTATION 1  // landscape, USB ports to the right; use 3 if mounted upside down
+#define SCREEN_ROTATION 0  // portrait; use 2 if mounted upside down
 
 SPIClass hspi(HSPI);
 Adafruit_ILI9341 tft(&hspi, TFT_DC, TFT_CS, TFT_RST);
@@ -61,8 +61,17 @@ const unsigned long METADATA_INTERVAL_MS = 60UL * 60UL * 1000UL;  // 1 hour
 unsigned long lastMetadataFetch = 0;
 bool haveMetadata = false;
 
-const int MAX_SENSORS = 8;  // a station can have up to 256 channels; only the first
-                             // MAX_SENSORS (in channel order) fit this screen
+const int MAX_SENSORS = 64;  // a station can have up to 256 channels, though nowhere near that
+                              // many in practice today -- generous since pagination (below)
+                              // means a station no longer has to fit on one screen.
+
+// Sensors that don't fit on one page cycle automatically -- header stays put, only the rows
+// below it change. ROWS_PER_PAGE is derived from the portrait screen: (320 tall - 40 header) /
+// 25 per row.
+const int ROWS_PER_PAGE = 11;
+const unsigned long PAGE_INTERVAL_MS = 5UL * 1000UL;  // 5 seconds per page
+unsigned long lastPageFlip = 0;
+int currentPage = 0;
 
 struct SensorMeta {
   int channel = -1;
@@ -76,7 +85,6 @@ struct SensorReading {
   unsigned long epoch = 0;
 };
 
-String stationLabel;
 SensorMeta sensors[MAX_SENSORS];
 int sensorCount = 0;
 SensorReading readings[MAX_SENSORS];
@@ -161,6 +169,12 @@ void loop() {
     firstRefresh = false;
     lastRefresh = now;
     fetchLatestReadings();
+    currentPage = 0;
+    lastPageFlip = now;
+    drawSensors();
+  } else if (haveMetadata && totalPages() > 1 && now - lastPageFlip >= PAGE_INTERVAL_MS) {
+    currentPage = (currentPage + 1) % totalPages();
+    lastPageFlip = now;
     drawSensors();
   }
 
@@ -233,8 +247,6 @@ bool fetchStationMetadata() {
     return false;
   }
 
-  stationLabel = doc["label"] | config.stationPrefix;
-
   sensorCount = 0;
   JsonArray arr = doc["sensors"];
   for (JsonObject s : arr) {
@@ -275,6 +287,11 @@ void fetchLatestReadings() {
   httpsGetLines(path, onCurrentLine);
 }
 
+int totalPages() {
+  if (sensorCount == 0) return 1;
+  return (sensorCount + ROWS_PER_PAGE - 1) / ROWS_PER_PAGE;
+}
+
 // --- Display -----------------------------------------------------------------------------
 
 void drawStatus(const String &message) {
@@ -299,18 +316,28 @@ void drawSensors() {
   tft.setTextColor(ILI9341_CYAN);
   tft.setTextSize(2);
   tft.setCursor(10, 6);
-  tft.println(stationLabel);
+  tft.println(config.stationPrefix);
+
+  if (totalPages() > 1) {
+    tft.setTextSize(1);
+    tft.setTextColor(ILI9341_DARKGREY);
+    tft.setCursor(180, 12);
+    tft.print(String(currentPage + 1) + "/" + String(totalPages()));
+  }
 
   int y = 34;
   const int rowHeight = 25;
 
-  for (int i = 0; i < sensorCount; i++) {
+  int first = currentPage * ROWS_PER_PAGE;
+  int last = min(sensorCount, first + ROWS_PER_PAGE);
+
+  for (int i = first; i < last; i++) {
     tft.setTextSize(1);
     tft.setCursor(10, y);
     tft.setTextColor(ILI9341_LIGHTGREY);
     tft.print(sensors[i].property);
 
-    tft.setCursor(220, y);
+    tft.setCursor(165, y);
     if (readings[i].valid) {
       tft.setTextColor(ILI9341_DARKGREY);
       tft.print(formatAge(readings[i].epoch));
