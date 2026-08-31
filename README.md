@@ -17,6 +17,14 @@ at [larsi.org/make/cyd/](https://larsi.org/make/cyd/).
 Both are read-only API clients -- no credentials required beyond WiFi, since both APIs serve
 public data.
 
+## Setup
+
+No secrets to configure at build time. On first boot -- or whenever none of the up to 3 saved
+Wi-Fi networks connect -- the device opens its own access point (`CYD-Weather-Setup-xxxxxx` /
+`CYD-Sensors-Setup-xxxxxx`) with a captive config portal: pick a network, enter its password, and
+set the station prefix and server URL (defaults to the right `larsi.org` section, but pointing it
+elsewhere works too). Settings persist in NVS across reboots and firmware updates.
+
 ## Hardware
 
 `ESP32-2432S028R`, either the single-USB or 2-USB-port variant. 2.8" ILI9341 TFT (no touch used
@@ -28,10 +36,9 @@ default VSPI pins. No external parts needed.
 1. Arduino IDE (or `arduino-cli`) with the `esp32` board package installed, board set to
    **ESP32 Dev Module**.
 2. Install libraries via Library Manager: `Adafruit GFX Library`, `Adafruit ILI9341`,
-   `ArduinoJson` (SensorsStation only).
-3. In each sketch's folder, copy `secrets.h.example` to `secrets.h` and fill in your WiFi
-   credentials and the station prefix you want to display.
-4. Compile and flash as usual.
+   `ArduinoJson`.
+3. Compile and flash as usual, then configure Wi-Fi/station/server through the captive portal --
+   see Setup above.
 
 Both sketches verify larsi.org's TLS certificate against a small curated CA bundle
 (`CertBundle.h` in each sketch folder) rather than skipping verification -- see that file's

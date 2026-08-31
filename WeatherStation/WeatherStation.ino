@@ -11,9 +11,10 @@
 // differ. See this repo's README for why the wire parameter stayed `prefix` rather than
 // `station`.
 //
-// Config lives in secrets.h (gitignored) -- copy secrets.h.example to secrets.h and fill in
-// your WiFi credentials and the ICAO station prefix to display (see
-// https://larsi.org/weather/ for the station list).
+// Wi-Fi, station prefix, and server URL are all set at runtime via a captive setup portal
+// (CydPortal.h) rather than compiled in -- on first boot, or whenever none of the up-to-3
+// saved networks connect, this opens an access point ("CYD-Weather-Setup-xxxxxx") with a
+// config page. See CydConfig.h for what's persisted (NVS) and how the network list works.
 //
 // Requires the ArduinoJson library (Library Manager -> "ArduinoJson", tested against 7.x).
 
@@ -26,9 +27,8 @@
 #include <time.h>
 
 #include "CertBundle.h"
-#include "secrets.h"
-
-#define API_BASE "/weather"
+#include "CydConfig.h"
+#include "CydPortal.h"
 
 // --- CYD pin mapping (ESP32-2432S028R) ------------------------------------------------------
 // The display is on the "HSPI-pattern" pins (14/13/12), not the ESP32's default VSPI pins, so
@@ -45,6 +45,10 @@
 
 SPIClass hspi(HSPI);
 Adafruit_ILI9341 tft(&hspi, TFT_DC, TFT_CS, TFT_RST);
+
+CydConfig config;
+String apiHost;
+String apiBasePath;
 
 // --- Refresh timing --------------------------------------------------------------------------
 const unsigned long REFRESH_INTERVAL_MS = 5UL * 60UL * 1000UL;  // 5 minutes
@@ -78,6 +82,24 @@ SensorMeta sensors[MAX_SENSORS];
 int sensorCount = 0;
 SensorReading readings[MAX_SENSORS];
 
+// Tries each saved network in turn (CydConfig's up-to-3 list), most-recently-added first.
+// Returns false if none connect within timeoutMs each -- caller falls back to the setup portal.
+bool connectToKnownNetwork(unsigned long timeoutMs) {
+  WiFi.mode(WIFI_STA);
+  for (uint8_t i = 0; i < CydConfig::kMaxNetworks; i++) {
+    if (config.ssids[i].length() == 0) continue;
+    drawStatus("Connecting to " + config.ssids[i] + "...");
+    WiFi.begin(config.ssids[i].c_str(), config.passwords[i].c_str());
+    unsigned long start = millis();
+    while (WiFi.status() != WL_CONNECTED && millis() - start < timeoutMs) {
+      delay(250);
+    }
+    if (WiFi.status() == WL_CONNECTED) return true;
+    WiFi.disconnect();
+  }
+  return false;
+}
+
 void setup() {
   Serial.begin(115200);
 
@@ -88,10 +110,20 @@ void setup() {
   tft.begin();
   tft.setRotation(SCREEN_ROTATION);
   tft.fillScreen(ILI9341_BLACK);
-  drawStatus("Connecting to WiFi...");
+  drawStatus("Starting...");
 
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  bool haveSettings = loadCydConfig(config);
+  if (!haveSettings || !connectToKnownNetwork(15000)) {
+    drawStatus("Starting setup portal...");
+    runCydSetupPortal();  // never returns -- restarts the device once the form is saved
+  }
+
+  if (!parseServerUrl(config.baseUrl, apiHost, apiBasePath)) {
+    apiHost = "larsi.org";
+    apiBasePath = "/weather/";
+  }
+
+  syncTime();
 }
 
 void loop() {
@@ -119,7 +151,7 @@ void loop() {
   unsigned long now = millis();
 
   if (!haveMetadata || now - lastMetadataFetch >= METADATA_INTERVAL_MS) {
-    if (!haveMetadata) drawStatus("Fetching " STATION_PREFIX " info...");
+    if (!haveMetadata) drawStatus("Fetching " + config.stationPrefix + " info...");
     if (fetchStationMetadata()) {
       haveMetadata = true;
       lastMetadataFetch = now;
@@ -145,7 +177,7 @@ void syncTime() {
 WiFiClientSecure connectApi() {
   WiFiClientSecure client;
   client.setCACertBundle(kServerCertBundle, kServerCertBundleLen);
-  client.connect("larsi.org", 443);
+  client.connect(apiHost.c_str(), 443);
   return client;
 }
 
@@ -164,7 +196,7 @@ bool httpsGetLines(const String &path, void (*onLine)(const String &line)) {
     return false;
   }
   client.print(String("GET ") + path + " HTTP/1.1\r\n" +
-               "Host: larsi.org\r\n" +
+               "Host: " + apiHost + "\r\n" +
                "User-Agent: cyd-larsi-org-weather-station\r\n" +
                "Connection: close\r\n\r\n");
   skipHttpHeaders(client);
@@ -185,9 +217,9 @@ bool fetchStationMetadata() {
     Serial.println("Connect failed");
     return false;
   }
-  String path = String(API_BASE) + "/json/sensors.php?prefix=" + STATION_PREFIX;
+  String path = apiBasePath + "json/sensors.php?prefix=" + config.stationPrefix;
   client.print(String("GET ") + path + " HTTP/1.1\r\n" +
-               "Host: larsi.org\r\n" +
+               "Host: " + apiHost + "\r\n" +
                "User-Agent: cyd-larsi-org-weather-station\r\n" +
                "Connection: close\r\n\r\n");
   skipHttpHeaders(client);
@@ -202,7 +234,7 @@ bool fetchStationMetadata() {
     return false;
   }
 
-  stationLabel = doc["label"] | STATION_PREFIX;
+  stationLabel = doc["label"] | config.stationPrefix;
 
   sensorCount = 0;
   JsonArray arr = doc["sensors"];
@@ -240,7 +272,7 @@ void onCurrentLine(const String &line) {
 
 void fetchLatestReadings() {
   for (int i = 0; i < sensorCount; i++) readings[i] = SensorReading();
-  String path = String(API_BASE) + "/csv/current.php?prefix=" + STATION_PREFIX;
+  String path = apiBasePath + "csv/current.php?prefix=" + config.stationPrefix;
   httpsGetLines(path, onCurrentLine);
 }
 
