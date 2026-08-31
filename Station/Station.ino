@@ -68,9 +68,9 @@ const int MAX_SENSORS = 64;  // weather stations report exactly 7 (channels 0-6)
                               // station no longer has to fit on one screen.
 
 // Sensors that don't fit on one page cycle automatically -- header stays put, only the rows
-// below it change. ROWS_PER_PAGE is derived from the portrait screen: (320 tall - 40 header) /
-// 25 per row.
-const int ROWS_PER_PAGE = 11;
+// below it change. ROWS_PER_PAGE is derived from the portrait screen: (320 tall - 34 header -
+// 16 footer) / 25 per row.
+const int ROWS_PER_PAGE = 10;
 const unsigned long PAGE_INTERVAL_MS = 5UL * 1000UL;  // 5 seconds per page
 unsigned long lastPageFlip = 0;
 int currentPage = 0;
@@ -137,10 +137,22 @@ void setup() {
     runCydSetupPortal();  // never returns -- restarts the device once the form is saved
   }
 
+  // Config page stays reachable at this device's normal LAN IP for as long as it's running --
+  // not just during the AP-mode portal above -- so the station/URL can be changed without
+  // ever having to get the device back into AP mode.
+  startCydConfigServer();
+
   syncTime();
 }
 
 void loop() {
+  handleCydConfigServer();
+  if (configServerSaved()) {
+    drawStatus("Saved. Rebooting...");
+    delay(1000);
+    ESP.restart();
+  }
+
   if (WiFi.status() != WL_CONNECTED) {
     drawStatus("WiFi disconnected, reconnecting...");
     WiFi.reconnect();
@@ -362,4 +374,9 @@ void drawSensors() {
 
     y += rowHeight;
   }
+
+  tft.setTextSize(1);
+  tft.setTextColor(ILI9341_DARKGREY);
+  tft.setCursor(10, 305);
+  tft.print("Config: " + WiFi.localIP().toString());
 }

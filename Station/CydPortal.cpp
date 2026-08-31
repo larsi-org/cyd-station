@@ -96,7 +96,13 @@ String buildFormPage() {
   } else {
     for (auto &ssid : networks) {
       String escaped = htmlEscape(ssid);
-      options += "<option value=\"" + escaped + "\">" + escaped + "</option>";
+      // Pre-select the currently-connected network (if it's the one already saved in slot 0)
+      // rather than defaulting to whichever scanned strongest -- otherwise submitting this
+      // form just to change the station prefix, on an already-working device, could silently
+      // switch it onto a different Wi-Fi network by accident.
+      bool isCurrent = WiFi.status() == WL_CONNECTED && ssid == WiFi.SSID();
+      options += "<option value=\"" + escaped + "\"" + (isCurrent ? " selected" : "") + ">" +
+                 escaped + "</option>";
     }
   }
 
@@ -167,11 +173,19 @@ void handleSave() {
   saved = true;
 }
 
-// Any unrecognized path bounces back to the form -- this is what makes phones/laptops auto-pop
-// the captive portal page on connect.
+// Any unrecognized path bounces back to the form -- during the AP-mode portal, this is what
+// makes phones/laptops auto-pop the captive portal page on connect; on the LAN-mode config
+// server it's just a friendly catch-all.
 void handleNotFound() {
   server.sendHeader("Location", "/", true);
   server.send(302, "text/plain", "");
+}
+
+void registerRoutes() {
+  server.on("/", HTTP_GET, handleRoot);
+  server.on("/save", HTTP_POST, handleSave);
+  server.onNotFound(handleNotFound);
+  server.begin();
 }
 
 }  // namespace
@@ -190,11 +204,7 @@ void runCydSetupPortal() {
                 apName.c_str(), apIP.toString().c_str());
 
   dnsServer.start(kDnsPort, "*", apIP);
-
-  server.on("/", HTTP_GET, handleRoot);
-  server.on("/save", HTTP_POST, handleSave);
-  server.onNotFound(handleNotFound);
-  server.begin();
+  registerRoutes();
 
   saved = false;
   unsigned long savedAt = 0;
@@ -204,4 +214,23 @@ void runCydSetupPortal() {
     if (saved && savedAt == 0) savedAt = millis();
     if (savedAt != 0 && millis() - savedAt > 1000) ESP.restart();
   }
+}
+
+// Same form/save handlers as the AP-mode portal, reachable at the device's normal LAN IP once
+// connected -- no DNS hijack (nothing else on a real network should be asking this device for
+// DNS), and non-blocking: registers routes and returns immediately rather than looping forever.
+// Caller (Station.ino's loop()) is responsible for calling handleCydConfigServer() regularly and
+// for restarting the device once a save happens (checked via configServerSaved()) -- unlike the
+// AP-mode portal, there's no dedicated loop here to do that itself.
+void startCydConfigServer() {
+  saved = false;
+  registerRoutes();
+}
+
+void handleCydConfigServer() {
+  server.handleClient();
+}
+
+bool configServerSaved() {
+  return saved;
 }
