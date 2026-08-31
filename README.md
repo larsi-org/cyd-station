@@ -6,24 +6,27 @@ APIs -- no third-party weather service, no cloud dashboard, just the CYD's scree
 same site that already tracks this data. Background and hardware notes are on the site itself,
 at [larsi.org/make/cyd/](https://larsi.org/make/cyd/).
 
-## Sketches
+## Sketch
 
-- **WeatherStation** -- polls [larsi.org/weather/](https://larsi.org/weather/)'s API for one
-  station's latest observed conditions (temperature, dew point, humidity, pressure, wind) and
-  shows them on the display. Any of the ~300 tracked stations works, not just airports near you.
-- **SensorsStation** -- polls [larsi.org/sensors/](https://larsi.org/sensors/)'s API for one
-  station's channel list and latest readings (up to 8 channels fit the screen).
+**Station** -- polls one of [larsi.org/weather/](https://larsi.org/weather/) or
+[larsi.org/sensors/](https://larsi.org/sensors/)'s API for one station's channel list and latest
+readings, and shows them on the display, auto-cycling through pages if there are more than fit
+on screen at once. A read-only API client -- no credentials required beyond WiFi, since both
+APIs serve public data.
 
-Both are read-only API clients -- no credentials required beyond WiFi, since both APIs serve
-public data.
+Both sections speak the same API shape (channel list + latest values), so this one sketch works
+against either -- which one a given device shows is just a matter of which server URL it's
+configured with, not a compile-time choice. (Used to be two separate, near-identical sketches,
+WeatherStation and SensorsStation -- merged once every change had to be made twice, identically,
+for no functional reason.)
 
 ## Setup
 
 No secrets to configure at build time. On first boot -- or whenever none of the up to 3 saved
-Wi-Fi networks connect -- the device opens its own access point (`CYD-Weather-Setup-xxxxxx` /
-`CYD-Sensors-Setup-xxxxxx`) with a captive config portal: pick a network, enter its password, and
-set the station prefix and server URL (defaults to the right `larsi.org` section, but pointing it
-elsewhere works too). Settings persist in NVS across reboots and firmware updates.
+Wi-Fi networks connect -- the device opens its own access point (`CYD-Station-Setup-xxxxxx`) with
+a captive config portal: pick a network, enter its password, and set the station prefix and
+server URL (e.g. `https://larsi.org/weather/` or `https://larsi.org/sensors/` -- any station in
+either section works). Settings persist in NVS across reboots and firmware updates.
 
 ## Hardware
 
@@ -40,9 +43,8 @@ default VSPI pins. No external parts needed.
 3. Compile and flash as usual, then configure Wi-Fi/station/server through the captive portal --
    see Setup above.
 
-Both sketches verify larsi.org's TLS certificate against a small curated CA bundle
-(`CertBundle.h` in each sketch folder) rather than skipping verification -- see that file's
-header comment for where it comes from.
+Verifies larsi.org's TLS certificate against a small curated CA bundle (`CertBundle.h`) rather
+than skipping verification -- see that file's header comment for where it comes from.
 
 ## License
 

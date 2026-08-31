@@ -1,19 +1,20 @@
-// Cheap Yellow Display (ESP32-2432S028R) weather station.
+// Cheap Yellow Display (ESP32-2432S028R) status station.
 //
-// Polls larsi.org's weather API (github.com/larsi-org/html, weather/ section) for one
-// station's channel list and latest readings, and shows them on the CYD's built-in 2.8"
-// ILI9341 screen. No touch, no audio -- just a display client.
+// Polls one of larsi.org's read-only APIs (github.com/larsi-org/html) for a station's channel
+// list and latest readings, and shows them on the CYD's built-in 2.8" ILI9341 screen. No touch,
+// no audio -- just a display client.
 //
-// This sketch and its sibling SensorsStation are deliberately near-identical: both sections'
-// APIs follow the same shape (json/sensors.php?prefix=X for channel metadata,
-// csv/current.php?prefix=X for latest values as channel,value,epoch rows), so both sketches
-// share the same fetch/parse/render structure -- only the API base path and default station
-// differ. See this repo's README for why the wire parameter stayed `prefix` rather than
-// `station`.
+// Works against either the weather or sensors section -- both speak the same API shape
+// (json/sensors.php?prefix=X for channel metadata, csv/current.php?prefix=X for latest values
+// as channel,value,epoch rows), so which one this device shows is purely a matter of which
+// server URL it's configured with at setup time, not a compile-time choice. (This started as
+// two separate near-identical sketches, WeatherStation and SensorsStation -- merged once it was
+// clear every change had to be made twice, identically, for no functional reason.) See this
+// repo's README for why the wire parameter stayed `prefix` rather than `station`.
 //
 // Wi-Fi, station prefix, and server URL are all set at runtime via a captive setup portal
 // (CydPortal.h) rather than compiled in -- on first boot, or whenever none of the up-to-3
-// saved networks connect, this opens an access point ("CYD-Weather-Setup-xxxxxx") with a
+// saved networks connect, this opens an access point ("CYD-Station-Setup-xxxxxx") with a
 // config page. See CydConfig.h for what's persisted (NVS) and how the network list works.
 //
 // Requires the ArduinoJson library (Library Manager -> "ArduinoJson", tested against 7.x).
@@ -127,9 +128,9 @@ void setup() {
   }
 
   if (!parseServerUrl(config.baseUrl, apiHost, apiBasePath)) {
-    // Shouldn't happen -- CydConfig's own default is always a well-formed URL, and the
-    // portal validates any user-submitted one with this same function before saving. If the
-    // saved value is somehow broken anyway, treat it like incomplete config rather than
+    // Shouldn't happen -- the portal validates any user-submitted URL with this same function
+    // before saving, and CydConfig::isComplete() already requires baseUrl to be non-empty. If
+    // the saved value is somehow broken anyway, treat it like incomplete config rather than
     // silently guessing a server this device wasn't actually told to use.
     drawStatus("Invalid server URL, opening setup portal...");
     delay(2000);
@@ -216,7 +217,7 @@ bool httpsGetLines(const String &path, void (*onLine)(const String &line)) {
   }
   client.print(String("GET ") + path + " HTTP/1.1\r\n" +
                "Host: " + apiHost + "\r\n" +
-               "User-Agent: cyd-larsi-org-weather-station\r\n" +
+               "User-Agent: cyd-larsi-org-station\r\n" +
                "Connection: close\r\n\r\n");
   skipHttpHeaders(client);
   while (client.connected() || client.available()) {
@@ -239,7 +240,7 @@ bool fetchStationMetadata() {
   String path = apiBasePath + "json/sensors.php?prefix=" + config.stationPrefix;
   client.print(String("GET ") + path + " HTTP/1.1\r\n" +
                "Host: " + apiHost + "\r\n" +
-               "User-Agent: cyd-larsi-org-weather-station\r\n" +
+               "User-Agent: cyd-larsi-org-station\r\n" +
                "Connection: close\r\n\r\n");
   skipHttpHeaders(client);
 

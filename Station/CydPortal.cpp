@@ -102,12 +102,12 @@ String buildFormPage() {
 
   String page;
   page += "<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">";
-  page += "<title>CYD Weather Station Setup</title>";
+  page += "<title>CYD Station Setup</title>";
   page += "<style>body{font-family:sans-serif;max-width:420px;margin:2em auto;padding:0 1em}";
   page += "label{display:block;margin-top:1em;font-weight:bold}";
   page += "input,select{width:100%;padding:.4em;box-sizing:border-box;font-size:1em}";
   page += "button{margin-top:1.5em;padding:.6em 1.2em;font-size:1em}</style></head><body>";
-  page += "<h1>CYD Weather Station Setup</h1>";
+  page += "<h1>CYD Station Setup</h1>";
   if (existing.ssids[0].length() > 0) {
     page += "<p>Station and server are pre-filled from the existing setup -- pick a new Wi-Fi "
             "network below. Up to " +
@@ -122,12 +122,11 @@ String buildFormPage() {
   page += "<label>Station Prefix</label><input type=\"text\" name=\"stationPrefix\" "
           "maxlength=\"32\" required value=\"" +
           htmlEscape(existing.stationPrefix) +
-          "\" placeholder=\"e.g. KABQ -- see larsi.org/weather/\">";
+          "\" placeholder=\"e.g. KABQ or batcave\">";
   page += "<label>Server URL</label><input type=\"url\" name=\"baseUrl\" maxlength=\"96\" "
           "required value=\"" +
-          htmlEscape(existing.baseUrl.length() > 0 ? existing.baseUrl
-                                                    : "https://larsi.org/weather/") +
-          "\">";
+          htmlEscape(existing.baseUrl) +
+          "\" placeholder=\"https://larsi.org/weather/ or /sensors/\">";
   page += "<button type=\"submit\">Save &amp; Reboot</button>";
   page += "</form></body></html>";
   return page;
@@ -183,7 +182,7 @@ void runCydSetupPortal() {
                // zeros on a true first-ever boot (no prior STA activity to have warmed up the
                // radio already, unlike the "known networks all failed" path into this portal)
 
-  String apName = "CYD-Weather-Setup-" + macSuffix();
+  String apName = "CYD-Station-Setup-" + macSuffix();
   WiFi.softAP(apName.c_str());
   IPAddress apIP = WiFi.softAPIP();
 

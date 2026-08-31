@@ -3,7 +3,7 @@
 // Trimmed down from sensor-node's SensorNodeConfig.h (~/Arduino/libraries/sensor-node) -- same
 // idea (up to kMaxNetworks known Wi-Fi networks, persisted to NVS, most-recently-added first),
 // minus everything specific to sensor-node's write path (device name/ID, API key, log
-// interval). Adds stationPrefix, which sensor-node has no equivalent of.
+// interval). Adds stationPrefix and baseUrl, which sensor-node has no equivalent of.
 
 #include <Arduino.h>
 
@@ -12,16 +12,22 @@ struct CydConfig {
   String ssids[kMaxNetworks];
   String passwords[kMaxNetworks];
 
-  // Sent as the API's `prefix` query param -- see https://larsi.org/weather/ for the station
-  // list (ICAO codes, e.g. "KABQ").
+  // Sent as the API's `prefix` query param -- see https://larsi.org/weather/ or
+  // https://larsi.org/sensors/ for the station list, matching whichever baseUrl below points
+  // at.
   String stationPrefix;
 
-  // Base URL API calls are built against -- json/sensors.php and csv/current.php are appended
-  // onto it directly (see parseServerUrl()). The scheme is accepted but ignored: this always
-  // connects over TLS on port 443 regardless of what's typed here.
+  // Base URL API calls are built against, e.g. "https://larsi.org/weather/" or
+  // "https://larsi.org/sensors/" -- json/sensors.php and csv/current.php are appended onto it
+  // directly (see parseServerUrl()). Both sections speak the same API shape, so this one
+  // sketch works against either just by pointing it at a different URL. The scheme is
+  // accepted but ignored: this always connects over TLS on port 443 regardless of what's
+  // typed here.
   String baseUrl;
 
-  bool isComplete() const { return ssids[0].length() > 0 && stationPrefix.length() > 0; }
+  bool isComplete() const {
+    return ssids[0].length() > 0 && stationPrefix.length() > 0 && baseUrl.length() > 0;
+  }
 };
 
 // Reads saved settings from NVS. Returns config.isComplete().

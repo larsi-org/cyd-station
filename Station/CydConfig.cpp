@@ -4,7 +4,7 @@
 #include <WiFi.h>
 
 namespace {
-const char *kNamespace = "cydsensors";
+const char *kNamespace = "cydstation";
 }
 
 bool loadCydConfig(CydConfig &config) {
@@ -15,7 +15,7 @@ bool loadCydConfig(CydConfig &config) {
     config.passwords[i] = prefs.getString(("password" + String(i)).c_str(), "");
   }
   config.stationPrefix = prefs.getString("stationPrefix", "");
-  config.baseUrl = prefs.getString("baseUrl", "https://larsi.org/sensors/");
+  config.baseUrl = prefs.getString("baseUrl", "");
   prefs.end();
   return config.isComplete();
 }
