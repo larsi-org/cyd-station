@@ -15,9 +15,10 @@ bool loadCydConfig(CydConfig &config) {
     config.passwords[i] = prefs.getString(("password" + String(i)).c_str(), "");
   }
   config.stationPrefix = prefs.getString("stationPrefix", "");
-  config.baseUrl = prefs.getString("baseUrl", "");
+  config.serverRoot = prefs.getString("serverRoot", "");
+  config.section = prefs.getString("section", "");
   prefs.end();
-  return config.isComplete();
+  return config.hasWifi();
 }
 
 void saveCydConfig(const CydConfig &config) {
@@ -28,7 +29,8 @@ void saveCydConfig(const CydConfig &config) {
     prefs.putString(("password" + String(i)).c_str(), config.passwords[i]);
   }
   prefs.putString("stationPrefix", config.stationPrefix);
-  prefs.putString("baseUrl", config.baseUrl);
+  prefs.putString("serverRoot", config.serverRoot);
+  prefs.putString("section", config.section);
   prefs.end();
 }
 

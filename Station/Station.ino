@@ -121,25 +121,26 @@ void setup() {
   tft.fillScreen(ILI9341_BLACK);
   drawStatus("Starting...");
 
-  bool haveSettings = loadCydConfig(config);
-  if (!haveSettings || !connectToKnownNetwork(15000)) {
+  bool haveWifi = loadCydConfig(config);
+  if (!haveWifi || !connectToKnownNetwork(15000)) {
     drawStatus("Starting setup portal...");
     runCydSetupPortal();  // never returns -- restarts the device once the form is saved
   }
 
-  if (!parseServerUrl(config.baseUrl, apiHost, apiBasePath)) {
-    // Shouldn't happen -- the portal validates any user-submitted URL with this same function
-    // before saving, and CydConfig::isComplete() already requires baseUrl to be non-empty. If
-    // the saved value is somehow broken anyway, treat it like incomplete config rather than
-    // silently guessing a server this device wasn't actually told to use.
-    drawStatus("Invalid server URL, opening setup portal...");
-    delay(2000);
-    runCydSetupPortal();  // never returns -- restarts the device once the form is saved
+  // Station/server aren't set up here at all -- that happens on the always-on config page
+  // below, once the device is actually on the network and can fetch a real station list. A
+  // brand-new device reaches this point with Wi-Fi working but no station chosen yet; loop()
+  // shows a "go configure" screen instead of trying to fetch with an empty apiHost.
+  if (config.hasStation() && !parseServerUrl(config.baseUrl(), apiHost, apiBasePath)) {
+    // Shouldn't happen -- the config page validates this same URL shape before saving. Leave
+    // apiHost/apiBasePath empty rather than guessing a server this device wasn't told to use;
+    // loop() treats that the same as "no station configured yet".
+    Serial.println("Saved server URL is invalid -- treating as unconfigured");
   }
 
   // Config page stays reachable at this device's normal LAN IP for as long as it's running --
-  // not just during the AP-mode portal above -- so the station/URL can be changed without
-  // ever having to get the device back into AP mode.
+  // not just during the AP-mode portal above -- so the station/server can be set (or changed)
+  // without ever having to get the device back into AP mode.
   startCydConfigServer();
 
   syncTime();
@@ -171,6 +172,12 @@ void loop() {
     drawStatus("Waiting for time sync...");
     syncTime();
     delay(1000);
+    return;
+  }
+
+  if (!config.hasStation() || apiHost.length() == 0) {
+    drawStatus("Visit http://" + WiFi.localIP().toString() + "/ to pick a station");
+    delay(2000);
     return;
   }
 

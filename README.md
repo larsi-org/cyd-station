@@ -22,11 +22,20 @@ for no functional reason.)
 
 ## Setup
 
-No secrets to configure at build time. On first boot -- or whenever none of the up to 3 saved
-Wi-Fi networks connect -- the device opens its own access point (`CYD-Station-Setup-xxxxxx`) with
-a captive config portal: pick a network, enter its password, and set the station prefix and
-server URL (e.g. `https://larsi.org/weather/` or `https://larsi.org/sensors/` -- any station in
-either section works). Settings persist in NVS across reboots and firmware updates.
+No secrets to configure at build time -- setup happens in two stages, both over a plain web
+form, no serial monitor needed:
+
+1. **Wi-Fi.** On first boot -- or whenever none of the up to 3 saved networks connect -- the
+   device opens its own access point (`CYD-Station-Setup-xxxxxx`) with a captive portal: pick a
+   network, enter its password, save. Nothing else is asked here.
+2. **Station.** Once connected, the same config form stays reachable at the device's normal LAN
+   IP (shown on screen as `Config: <ip>`) for as long as it's running -- no need to get the
+   device back into AP mode to change anything later. Set a Server Root (defaults to
+   `https://larsi.org/`) and a Section (Weather or Sensors), hit Refresh Stations to fetch that
+   section's real station list from the server, then pick one -- no free-text station entry.
+
+Both stages save independently and restart the device; settings persist in NVS across reboots
+and firmware updates.
 
 ## Hardware
 

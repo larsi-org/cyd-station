@@ -3,12 +3,14 @@
 #include <Arduino.h>
 
 // Blocks forever: brings up an open Wi-Fi access point plus a captive config portal (network
-// picker, password, station prefix, base URL), saves whatever the user submits, then restarts
-// the device. Trimmed down from sensor-node's SensorNodePortal.h/.cpp -- same network-picker/
-// NVS/DNS-hijack mechanics, minus everything specific to sensor-node's write path.
+// picker + password only -- station/server setup happens separately, see below), saves
+// whatever's submitted, then restarts the device. Trimmed down from sensor-node's
+// SensorNodePortal.h/.cpp -- same network-picker/NVS/DNS-hijack mechanics, minus everything
+// specific to sensor-node's write path.
 void runCydSetupPortal();
 
-// Same config form, reachable at the device's normal LAN IP once it's on the real network --
+// The station config page (server root, section, station prefix -- picked from a live-fetched
+// list, not typed in), reachable at the device's normal LAN IP once it's on the real network --
 // no DNS hijack, no blocking. Call once after a successful connect; call
 // handleCydConfigServer() every loop() tick afterward to actually service requests, and check
 // configServerSaved() to know when to restart the device.
