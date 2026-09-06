@@ -93,14 +93,15 @@ SensorReading readings[MAX_SENSORS];
 
 // --- Graphs --------------------------------------------------------------------------------
 // One extra page, after the paginated value-list pages above, showing up to 3 mini history
-// graphs (config.graphChannels), stacked one per row. Sensors and weather stations log at very
-// different rates (~12/hr vs ~1-2/hr -- see csv/data.php's shared t_min/t_max/sensors
-// protocol), so the lookback window is picked per section to land a similar number of samples
-// across GRAPH_COLUMNS either way.
+// graphs (config.graphChannels), stacked one per row. GRAPH_COLUMNS is 72 so each column is
+// exactly 3px wide against the 216px plot area (drawGraphs()'s 12px margins), with no fractional
+// pixel rounding -- and so each section's window lines up with one column per expected sample:
+// sensors log ~12/hr, so 6h gives ~1 sample/column; weather logs ~1/hr, so 72h (3 days) does the
+// same. See csv/data.php's shared t_min/t_max/sensors protocol for the fetch itself.
 const int NUM_GRAPHS = 3;
-const int GRAPH_COLUMNS = 48;
+const int GRAPH_COLUMNS = 72;
 const unsigned long SENSORS_GRAPH_WINDOW_S = 6UL * 3600UL;    // ~72 samples at 12/hr
-const unsigned long WEATHER_GRAPH_WINDOW_S = 48UL * 3600UL;   // ~48-96 samples at 1-2/hr
+const unsigned long WEATHER_GRAPH_WINDOW_S = 72UL * 3600UL;   // ~72 samples at 1/hr
 
 // One time-bucketed column of a mini graph. sum/count give the column's average; vmin/vmax (only
 // meaningful once count > 0) drive the min-max ribbon for columns dense enough to have more than
@@ -543,8 +544,8 @@ void drawGraphs() {
 
   const int areaTop = 34;
   const int areaBottom = 302;
-  const int areaLeft = 6;
-  const int areaRight = 234;
+  const int areaLeft = 12;
+  const int areaRight = 228;
   const int gap = 6;
   const int cellWidth = areaRight - areaLeft;
   const int cellHeight = (areaBottom - areaTop - (NUM_GRAPHS - 1) * gap) / NUM_GRAPHS;

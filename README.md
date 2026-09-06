@@ -18,8 +18,8 @@ what auto-cycles onto the screen (10s per page): the paginated value-list pages,
 with a stack of 3 mini history graphs (one full-width row per configurable channel, pulled from
 the same `csv/data.php` history endpoint the main site's own report pages use), or both in
 sequence. Each graph auto-scales its own y-axis from the fetched window's min/max, and the
-lookback window itself is picked per section (6h for sensors' ~12/hr logging rate, 48h for
-weather's ~1-2/hr) so both end up with a similar number of samples across the graph's width.
+lookback window itself is picked per section (6h for sensors' ~12/hr logging rate, 72h/3 days for
+weather's ~1/hr) so both land roughly one sample per column across the graph's 72 columns.
 
 Both sections speak the same API shape (channel list + latest values), so this one sketch works
 against either -- which one a given device shows is just a matter of which server URL it's
