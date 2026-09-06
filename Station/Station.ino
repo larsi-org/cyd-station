@@ -71,7 +71,7 @@ const int MAX_SENSORS = 64;  // weather stations report exactly 7 (channels 0-6)
 // below it change. ROWS_PER_PAGE is derived from the portrait screen: (320 tall - 34 header -
 // 16 footer) / 25 per row.
 const int ROWS_PER_PAGE = 10;
-const unsigned long PAGE_INTERVAL_MS = 5UL * 1000UL;  // 5 seconds per page
+const unsigned long PAGE_INTERVAL_MS = 10UL * 1000UL;  // 10 seconds per page
 unsigned long lastPageFlip = 0;
 int currentPage = 0;
 
@@ -91,7 +91,7 @@ SensorMeta sensors[MAX_SENSORS];
 int sensorCount = 0;
 SensorReading readings[MAX_SENSORS];
 
-// --- Graphs (config.graphsEnabled) --------------------------------------------------------
+// --- Graphs --------------------------------------------------------------------------------
 // One extra page, after the paginated value-list pages above, showing up to 3 mini history
 // graphs (config.graphChannels), stacked one per row. Sensors and weather stations log at very
 // different rates (~12/hr vs ~1-2/hr -- see csv/data.php's shared t_min/t_max/sensors
@@ -226,7 +226,7 @@ void loop() {
     firstRefresh = false;
     lastRefresh = now;
     fetchLatestReadings();
-    if (config.graphsEnabled) fetchGraphData();
+    fetchGraphData();
     currentPage = 0;
     lastPageFlip = now;
     drawCurrentPage();
@@ -423,9 +423,9 @@ int valuePages() {
   return (sensorCount + ROWS_PER_PAGE - 1) / ROWS_PER_PAGE;
 }
 
-// Value-list pages, plus one extra graph page at the end when enabled.
+// Value-list pages, plus one extra graph page at the end.
 int totalPages() {
-  return valuePages() + (config.graphsEnabled ? 1 : 0);
+  return valuePages() + 1;
 }
 
 // --- Display -----------------------------------------------------------------------------
@@ -610,7 +610,7 @@ void drawGraphs() {
 }
 
 // Dispatches to whichever page currentPage actually refers to -- the value-list pages (0 ..
-// valuePages()-1) or the one graph page appended after them when config.graphsEnabled.
+// valuePages()-1) or the one graph page always appended after them.
 void drawCurrentPage() {
   if (currentPage >= valuePages()) {
     drawGraphs();

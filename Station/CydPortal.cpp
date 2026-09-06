@@ -316,7 +316,6 @@ String buildStationFormPage() {
   // value").
   bool cameFromReload = server.hasArg("section");
   bool inverseDisplay = cameFromReload ? server.hasArg("inverseDisplay") : existing.inverseDisplay;
-  bool graphsEnabled = cameFromReload ? server.hasArg("graphsEnabled") : existing.graphsEnabled;
 
   // The station <select>'s own current value rides along on the "Refresh Stations" GET reload
   // like any other form field, so the channel dropdowns can reflect whichever station is
@@ -375,9 +374,6 @@ String buildStationFormPage() {
   page += "<label>Station</label><select name=\"stationPrefix\">" + stationOptions + "</select>";
   page += "<label class=\"checkbox\"><input type=\"checkbox\" name=\"inverseDisplay\"" +
           String(inverseDisplay ? " checked" : "") + "> Inverse Display (white background)</label>";
-  page += "<label class=\"checkbox\"><input type=\"checkbox\" name=\"graphsEnabled\"" +
-          String(graphsEnabled ? " checked" : "") + "> Show Graphs (extra page, 3 mini history "
-          "graphs)</label>";
   page += "<label>Graph 1</label>" + buildChannelSelect("graphChannel0", channels, graphChannels[0]);
   page += "<label>Graph 2</label>" + buildChannelSelect("graphChannel1", channels, graphChannels[1]);
   page += "<label>Graph 3</label>" + buildChannelSelect("graphChannel2", channels, graphChannels[2]);
@@ -430,7 +426,6 @@ void handleStationSave() {
   config.section = section;
   config.stationPrefix = stationPrefix;
   config.inverseDisplay = server.hasArg("inverseDisplay");  // absent entirely when unchecked
-  config.graphsEnabled = server.hasArg("graphsEnabled");    // absent entirely when unchecked
   for (uint8_t i = 0; i < 3; i++) {
     String argName = "graphChannel" + String(i);
     if (server.hasArg(argName) && server.arg(argName).length() > 0) {

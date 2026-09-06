@@ -30,11 +30,10 @@ struct CydConfig {
   // darker text, instead of the default dark background. Doesn't gate hasStation()/hasWifi().
   bool inverseDisplay = false;
 
-  // Off by default. When on, an extra page (after the paginated value-list pages) shows 3 mini
-  // history graphs, stacked one per row, one per entry in graphChannels -- see CydPortal.cpp's
-  // Graph 1-3 dropdowns for how each channel is picked (defaults to 0/1/2, but any channel the
-  // station reports can go in any slot).
-  bool graphsEnabled = false;
+  // An extra page (after the paginated value-list pages) always shows 3 mini history graphs,
+  // stacked one per row, one per entry in graphChannels -- see CydPortal.cpp's Graph 1-3
+  // dropdowns for how each channel is picked (defaults to 0/1/2, but any channel the station
+  // reports can go in any slot).
   int graphChannels[3] = {0, 1, 2};
 
   bool hasWifi() const { return ssids[0].length() > 0; }
