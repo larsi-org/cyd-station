@@ -580,31 +580,36 @@ void drawGraphs() {
     if (vmax <= vmin) vmax = vmin + 1;  // flat data -- avoid a divide-by-zero scale
 
     bool haveLast = false;
-    float lastLo = 0, lastHi = 0;
+    float lastAvg = 0;
+    bool havePrevPoint = false;
+    int prevX = 0, prevY = 0;
 
     for (int c = 0; c < GRAPH_COLUMNS; c++) {
       GraphColumn &gc = graphColumns[i][c];
-      float lo, hi;
+      float avg;
       if (gc.has) {
-        lo = gc.vmin;
-        hi = gc.vmax;
+        avg = gc.sum / gc.count;
         haveLast = true;
-        lastLo = lo;
-        lastHi = hi;
+        lastAvg = avg;
       } else if (haveLast) {
         // No sample landed in this column -- expected for weather's ~1-2/hr rate against a
         // window sized for it. Carry the last known value forward rather than leaving a gap,
         // same as any sparse-telemetry line chart would.
-        lo = lastLo;
-        hi = lastHi;
+        avg = lastAvg;
       } else {
         continue;  // no data yet at all this far into the window
       }
 
       int x = plotX + c * plotW / GRAPH_COLUMNS;
-      int yLo = plotY + plotH - 1 - (int)((lo - vmin) / (vmax - vmin) * (plotH - 1));
-      int yHi = plotY + plotH - 1 - (int)((hi - vmin) / (vmax - vmin) * (plotH - 1));
-      tft.drawFastVLine(x, yHi, yLo - yHi + 1, colorValue());
+      int y = plotY + plotH - 1 - (int)((avg - vmin) / (vmax - vmin) * (plotH - 1));
+      if (havePrevPoint) {
+        tft.drawLine(prevX, prevY, x, y, colorValue());  // Bresenham, via Adafruit_GFX
+      } else {
+        tft.drawPixel(x, y, colorValue());
+      }
+      prevX = x;
+      prevY = y;
+      havePrevPoint = true;
     }
   }
 }
