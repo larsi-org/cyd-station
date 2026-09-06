@@ -226,7 +226,7 @@ void loop() {
     firstRefresh = false;
     lastRefresh = now;
     fetchLatestReadings();
-    fetchGraphData();
+    if (config.displayMode != "text") fetchGraphData();
     currentPage = 0;
     lastPageFlip = now;
     drawCurrentPage();
@@ -423,8 +423,12 @@ int valuePages() {
   return (sensorCount + ROWS_PER_PAGE - 1) / ROWS_PER_PAGE;
 }
 
-// Value-list pages, plus one extra graph page at the end.
+// Pages cycled through depends on config.displayMode: just the value-list pages ("text"), just
+// the one graphs page ("graphs"), or the value-list pages plus one graph page at the end
+// ("both").
 int totalPages() {
+  if (config.displayMode == "graphs") return 1;
+  if (config.displayMode == "text") return valuePages();
   return valuePages() + 1;
 }
 
@@ -614,10 +618,14 @@ void drawGraphs() {
   }
 }
 
-// Dispatches to whichever page currentPage actually refers to -- the value-list pages (0 ..
-// valuePages()-1) or the one graph page always appended after them.
+// Dispatches to whichever page currentPage actually refers to, per config.displayMode -- see
+// totalPages() for how each mode's page count is derived.
 void drawCurrentPage() {
-  if (currentPage >= valuePages()) {
+  if (config.displayMode == "graphs") {
+    drawGraphs();
+  } else if (config.displayMode == "text") {
+    drawSensors();
+  } else if (currentPage >= valuePages()) {
     drawGraphs();
   } else {
     drawSensors();

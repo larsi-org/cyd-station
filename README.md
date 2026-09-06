@@ -10,15 +10,16 @@ at [larsi.org/make/cyd/](https://larsi.org/make/cyd/).
 
 **Station** -- polls one of [larsi.org/weather/](https://larsi.org/weather/) or
 [larsi.org/sensors/](https://larsi.org/sensors/)'s API for one station's channel list and latest
-readings, and shows them on the display, auto-cycling through pages (10s each) -- the paginated
-value-list pages, then one more page with a stack of 3 mini history graphs, one full-width row
-per configurable channel, pulled from the same `csv/data.php` history endpoint the main site's
-own report pages use. A read-only API client -- no credentials required beyond WiFi, since both
-APIs serve public data.
+readings, and shows them on the display. A read-only API client -- no credentials required
+beyond WiFi, since both APIs serve public data.
 
-Each graph auto-scales its own y-axis from the fetched window's min/max, and the lookback window
-itself is picked per section (6h for sensors' ~12/hr logging rate, 48h for weather's ~1-2/hr) so
-both end up with a similar number of samples across the graph's width.
+The Display setting (Text Only, Graphs Only, or Text & Graphs -- defaults to Text Only) picks
+what auto-cycles onto the screen (10s per page): the paginated value-list pages, a single page
+with a stack of 3 mini history graphs (one full-width row per configurable channel, pulled from
+the same `csv/data.php` history endpoint the main site's own report pages use), or both in
+sequence. Each graph auto-scales its own y-axis from the fetched window's min/max, and the
+lookback window itself is picked per section (6h for sensors' ~12/hr logging rate, 48h for
+weather's ~1-2/hr) so both end up with a similar number of samples across the graph's width.
 
 Both sections speak the same API shape (channel list + latest values), so this one sketch works
 against either -- which one a given device shows is just a matter of which server URL it's
@@ -39,8 +40,8 @@ form, no serial monitor needed:
    device back into AP mode to change anything later. Set a Server Root (defaults to
    `https://larsi.org/`) and a Section (Weather or Sensors), hit Refresh Stations to fetch that
    section's real station list from the server, then pick one -- no free-text station entry.
-   Pick a channel for each of the 3 Graph dropdowns (also live-fetched, from the
-   currently-selected station) -- defaults to channels 0-2.
+   Pick a Display mode and a channel for each of the 3 Graph dropdowns (also live-fetched, from
+   the currently-selected station) -- defaults to Text Only and channels 0-2.
 
 Both stages save independently and restart the device; settings persist in NVS across reboots
 and firmware updates.

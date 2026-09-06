@@ -30,10 +30,16 @@ struct CydConfig {
   // darker text, instead of the default dark background. Doesn't gate hasStation()/hasWifi().
   bool inverseDisplay = false;
 
-  // An extra page (after the paginated value-list pages) always shows 3 mini history graphs,
-  // stacked one per row, one per entry in graphChannels -- see CydPortal.cpp's Graph 1-3
-  // dropdowns for how each channel is picked (defaults to 0/1/2, but any channel the station
-  // reports can go in any slot).
+  // "text", "graphs", or "both" -- which pages loop() cycles through: just the paginated
+  // value-list pages, just the one graphs page, or both in sequence. Defaults to "text" for a
+  // brand-new device (matches the sketch's original, graphs-less behavior); an already-set
+  // value is always preserved on reload, same as section below.
+  String displayMode = "text";
+
+  // Which channels the graphs page shows, one per row -- see CydPortal.cpp's Graph 1-3
+  // dropdowns for how each is picked (defaults to 0/1/2, but any channel the station reports can
+  // go in any slot). Populated regardless of displayMode, so switching into "graphs"/"both"
+  // later doesn't need re-picking channels.
   int graphChannels[3] = {0, 1, 2};
 
   bool hasWifi() const { return ssids[0].length() > 0; }

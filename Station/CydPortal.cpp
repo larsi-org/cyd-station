@@ -309,6 +309,9 @@ String buildStationFormPage() {
   String section = server.hasArg("section")   ? server.arg("section")
                     : existing.section.length() > 0 ? existing.section
                                                      : "weather";
+  String displayMode = server.hasArg("displayMode") ? server.arg("displayMode")
+                        : existing.displayMode.length() > 0 ? existing.displayMode
+                                                             : "text";
 
   // Checkbox args only appear at all when checked -- server.hasArg("section") tells apart a
   // "Refresh Stations" GET reload (where an unchecked box should read as false) from the very
@@ -374,6 +377,14 @@ String buildStationFormPage() {
   page += "<label>Station</label><select name=\"stationPrefix\">" + stationOptions + "</select>";
   page += "<label class=\"checkbox\"><input type=\"checkbox\" name=\"inverseDisplay\"" +
           String(inverseDisplay ? " checked" : "") + "> Inverse Display (white background)</label>";
+  page += "<label>Display</label><select name=\"displayMode\">";
+  page += String("<option value=\"text\"") + (displayMode == "text" ? " selected" : "") +
+          ">Text Only</option>";
+  page += String("<option value=\"graphs\"") + (displayMode == "graphs" ? " selected" : "") +
+          ">Graphs Only</option>";
+  page += String("<option value=\"both\"") + (displayMode == "both" ? " selected" : "") +
+          ">Text &amp; Graphs</option>";
+  page += "</select>";
   page += "<label>Graph 1</label>" + buildChannelSelect("graphChannel0", channels, graphChannels[0]);
   page += "<label>Graph 2</label>" + buildChannelSelect("graphChannel1", channels, graphChannels[1]);
   page += "<label>Graph 3</label>" + buildChannelSelect("graphChannel2", channels, graphChannels[2]);
@@ -402,6 +413,8 @@ void handleStationSave() {
   section.trim();
   String stationPrefix = server.arg("stationPrefix");
   stationPrefix.trim();
+  String displayMode = server.arg("displayMode");
+  displayMode.trim();
 
   if (serverRoot.length() <= 1) {
     server.send(400, "text/html", "<p>Server Root is required. <a href=\"/\">Back</a></p>");
@@ -409,6 +422,12 @@ void handleStationSave() {
   }
   if (section != "weather" && section != "sensors") {
     server.send(400, "text/html", "<p>Section must be Weather or Sensors. <a href=\"/\">Back</a></p>");
+    return;
+  }
+  if (displayMode != "text" && displayMode != "graphs" && displayMode != "both") {
+    server.send(400, "text/html",
+                "<p>Display must be Text Only, Graphs Only, or Text &amp; Graphs. "
+                "<a href=\"/\">Back</a></p>");
     return;
   }
   if (stationPrefix.length() == 0) {
@@ -425,6 +444,7 @@ void handleStationSave() {
   config.serverRoot = serverRoot;
   config.section = section;
   config.stationPrefix = stationPrefix;
+  config.displayMode = displayMode;
   config.inverseDisplay = server.hasArg("inverseDisplay");  // absent entirely when unchecked
   for (uint8_t i = 0; i < 3; i++) {
     String argName = "graphChannel" + String(i);
