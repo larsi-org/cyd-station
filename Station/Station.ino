@@ -91,6 +91,37 @@ SensorMeta sensors[MAX_SENSORS];
 int sensorCount = 0;
 SensorReading readings[MAX_SENSORS];
 
+// --- Graphs (config.graphsEnabled) --------------------------------------------------------
+// One extra page, after the paginated value-list pages above, showing up to 4 mini history
+// graphs (config.graphChannels) as a 2x2 grid. Sensors and weather stations log at very
+// different rates (~12/hr vs ~1-2/hr -- see csv/data.php's shared t_min/t_max/sensors
+// protocol), so the lookback window is picked per section to land a similar number of samples
+// across GRAPH_COLUMNS either way.
+const int NUM_GRAPHS = 4;
+const int GRAPH_COLUMNS = 48;
+const unsigned long SENSORS_GRAPH_WINDOW_S = 6UL * 3600UL;    // ~72 samples at 12/hr
+const unsigned long WEATHER_GRAPH_WINDOW_S = 48UL * 3600UL;   // ~48-96 samples at 1-2/hr
+
+// One time-bucketed column of a mini graph. sum/count give the column's average; vmin/vmax (only
+// meaningful once count > 0) drive the min-max ribbon for columns dense enough to have more than
+// one sample -- see drawGraphs().
+struct GraphColumn {
+  bool has = false;
+  int count = 0;
+  float sum = 0;
+  float vmin = 0;
+  float vmax = 0;
+};
+
+GraphColumn graphColumns[NUM_GRAPHS][GRAPH_COLUMNS];
+bool graphHasData[NUM_GRAPHS];
+float graphGlobalMin[NUM_GRAPHS];
+float graphGlobalMax[NUM_GRAPHS];
+unsigned long graphTMin = 0;
+unsigned long graphWindowSeconds = 0;
+bool graphSkippedHeader = false;  // onGraphDataLine() state -- csv/data.php's first line is a
+                                   // header ("t,s,v"), unlike csv/current.php's onCurrentLine.
+
 // Tries each saved network in turn (CydConfig's up-to-3 list), most-recently-added first.
 // Returns false if none connect within timeoutMs each -- caller falls back to the setup portal.
 bool connectToKnownNetwork(unsigned long timeoutMs) {
@@ -195,13 +226,14 @@ void loop() {
     firstRefresh = false;
     lastRefresh = now;
     fetchLatestReadings();
+    if (config.graphsEnabled) fetchGraphData();
     currentPage = 0;
     lastPageFlip = now;
-    drawSensors();
+    drawCurrentPage();
   } else if (haveMetadata && totalPages() > 1 && now - lastPageFlip >= PAGE_INTERVAL_MS) {
     currentPage = (currentPage + 1) % totalPages();
     lastPageFlip = now;
-    drawSensors();
+    drawCurrentPage();
   }
 
   delay(1000);
@@ -313,9 +345,87 @@ void fetchLatestReadings() {
   httpsGetLines(path, onCurrentLine);
 }
 
-int totalPages() {
+// Bins one csv/data.php row (epoch,channel,value) into whichever graph slot(s) are configured
+// for that channel -- same channel can appear in more than one slot, in which case it's binned
+// into each. Rows outside [graphTMin, graphTMin + graphWindowSeconds) shouldn't happen (that's
+// exactly the t_min/t_max fetchGraphData() requested) but are skipped rather than trusted, since
+// a slightly stale device clock could shift the window after the request was already sent.
+void onGraphDataLine(const String &line) {
+  if (!graphSkippedHeader) {  // csv/data.php's first line is always the "t,s,v" header row
+    graphSkippedHeader = true;
+    return;
+  }
+
+  int c1 = line.indexOf(',');
+  int c2 = line.indexOf(',', c1 + 1);
+  if (c1 < 0 || c2 < 0) return;
+
+  unsigned long epoch = strtoul(line.substring(0, c1).c_str(), nullptr, 10);
+  int channel = line.substring(c1 + 1, c2).toInt();
+  float value = line.substring(c2 + 1).toFloat();
+  if (epoch < graphTMin || epoch - graphTMin >= graphWindowSeconds) return;
+
+  int col = (int)((epoch - graphTMin) * GRAPH_COLUMNS / graphWindowSeconds);
+  col = constrain(col, 0, GRAPH_COLUMNS - 1);
+
+  for (int i = 0; i < NUM_GRAPHS; i++) {
+    if (config.graphChannels[i] != channel) continue;
+    GraphColumn &gc = graphColumns[i][col];
+    if (!gc.has) {
+      gc.has = true;
+      gc.vmin = gc.vmax = value;
+    } else {
+      gc.vmin = min(gc.vmin, value);
+      gc.vmax = max(gc.vmax, value);
+    }
+    gc.sum += value;
+    gc.count++;
+  }
+}
+
+void fetchGraphData() {
+  for (int i = 0; i < NUM_GRAPHS; i++)
+    for (int c = 0; c < GRAPH_COLUMNS; c++) graphColumns[i][c] = GraphColumn();
+
+  graphWindowSeconds = (config.section == "sensors") ? SENSORS_GRAPH_WINDOW_S : WEATHER_GRAPH_WINDOW_S;
+  unsigned long tMax = (unsigned long)time(nullptr);
+  graphTMin = tMax > graphWindowSeconds ? tMax - graphWindowSeconds : 0;
+
+  String sensorsParam = String(config.graphChannels[0]) + "," + String(config.graphChannels[1]) +
+                         "," + String(config.graphChannels[2]) + "," + String(config.graphChannels[3]);
+  String path = apiBasePath + "csv/data.php?prefix=" + config.stationPrefix +
+                "&sensors=" + sensorsParam + "&t_min=" + String(graphTMin) + "&t_max=" + String(tMax);
+  graphSkippedHeader = false;
+  httpsGetLines(path, onGraphDataLine);
+
+  for (int i = 0; i < NUM_GRAPHS; i++) {
+    bool any = false;
+    float mn = 0, mx = 0;
+    for (int c = 0; c < GRAPH_COLUMNS; c++) {
+      if (!graphColumns[i][c].has) continue;
+      if (!any) {
+        mn = graphColumns[i][c].vmin;
+        mx = graphColumns[i][c].vmax;
+        any = true;
+      } else {
+        mn = min(mn, graphColumns[i][c].vmin);
+        mx = max(mx, graphColumns[i][c].vmax);
+      }
+    }
+    graphHasData[i] = any;
+    graphGlobalMin[i] = mn;
+    graphGlobalMax[i] = mx;
+  }
+}
+
+int valuePages() {
   if (sensorCount == 0) return 1;
   return (sensorCount + ROWS_PER_PAGE - 1) / ROWS_PER_PAGE;
+}
+
+// Value-list pages, plus one extra graph page at the end when enabled.
+int totalPages() {
+  return valuePages() + (config.graphsEnabled ? 1 : 0);
 }
 
 // --- Display -----------------------------------------------------------------------------
@@ -406,4 +516,107 @@ void drawSensors() {
   tft.setTextColor(colorMuted());
   tft.setCursor(10, 305);
   tft.print("Config: " + WiFi.localIP().toString());
+}
+
+// 2x2 grid of mini history graphs (config.graphChannels), one extra page after the value-list
+// pages above -- see drawCurrentPage(). Each cell scales its own y-axis from that channel's own
+// min/max over the fetched window (fetchGraphData()) rather than any fixed range, since a given
+// slot could hold anything from a temperature to a wind speed.
+void drawGraphs() {
+  tft.fillScreen(colorBg());
+
+  tft.setTextColor(colorHeader());
+  tft.setTextSize(2);
+  tft.setCursor(10, 6);
+  tft.println(config.stationPrefix);
+
+  if (totalPages() > 1) {
+    tft.setTextSize(1);
+    tft.setTextColor(colorMuted());
+    tft.setCursor(180, 12);
+    tft.print(String(currentPage + 1) + "/" + String(totalPages()));
+  }
+
+  const int areaTop = 34;
+  const int areaBottom = 302;
+  const int areaLeft = 6;
+  const int areaRight = 234;
+  const int gap = 6;
+  const int cellWidth = (areaRight - areaLeft - gap) / 2;
+  const int cellHeight = (areaBottom - areaTop - gap) / 2;
+  const int labelHeight = 20;
+
+  for (int i = 0; i < NUM_GRAPHS; i++) {
+    int col = i % 2;
+    int row = i / 2;
+    int cellX = areaLeft + col * (cellWidth + gap);
+    int cellY = areaTop + row * (cellHeight + gap);
+
+    int channel = config.graphChannels[i];
+    int idx = findSensorIndex(channel);
+    String property = idx >= 0 ? sensors[idx].property : ("Ch " + String(channel));
+    String unit = idx >= 0 ? sensors[idx].unit : "";
+
+    tft.setTextSize(1);
+    tft.setTextColor(colorLabel());
+    tft.setCursor(cellX, cellY);
+    tft.print(property);
+
+    tft.setCursor(cellX, cellY + 10);
+    if (graphHasData[i]) {
+      tft.setTextColor(colorMuted());
+      tft.print(String(graphGlobalMin[i], 1) + "-" + String(graphGlobalMax[i], 1) + " " + unit);
+    } else {
+      tft.setTextColor(colorError());
+      tft.print("no data");
+      continue;
+    }
+
+    int plotX = cellX;
+    int plotY = cellY + labelHeight;
+    int plotW = cellWidth;
+    int plotH = cellHeight - labelHeight;
+
+    float vmin = graphGlobalMin[i];
+    float vmax = graphGlobalMax[i];
+    if (vmax <= vmin) vmax = vmin + 1;  // flat data -- avoid a divide-by-zero scale
+
+    bool haveLast = false;
+    float lastLo = 0, lastHi = 0;
+
+    for (int c = 0; c < GRAPH_COLUMNS; c++) {
+      GraphColumn &gc = graphColumns[i][c];
+      float lo, hi;
+      if (gc.has) {
+        lo = gc.vmin;
+        hi = gc.vmax;
+        haveLast = true;
+        lastLo = lo;
+        lastHi = hi;
+      } else if (haveLast) {
+        // No sample landed in this column -- expected for weather's ~1-2/hr rate against a
+        // window sized for it. Carry the last known value forward rather than leaving a gap,
+        // same as any sparse-telemetry line chart would.
+        lo = lastLo;
+        hi = lastHi;
+      } else {
+        continue;  // no data yet at all this far into the window
+      }
+
+      int x = plotX + c * plotW / GRAPH_COLUMNS;
+      int yLo = plotY + plotH - 1 - (int)((lo - vmin) / (vmax - vmin) * (plotH - 1));
+      int yHi = plotY + plotH - 1 - (int)((hi - vmin) / (vmax - vmin) * (plotH - 1));
+      tft.drawFastVLine(x, yHi, yLo - yHi + 1, colorValue());
+    }
+  }
+}
+
+// Dispatches to whichever page currentPage actually refers to -- the value-list pages (0 ..
+// valuePages()-1) or the one graph page appended after them when config.graphsEnabled.
+void drawCurrentPage() {
+  if (currentPage >= valuePages()) {
+    drawGraphs();
+  } else {
+    drawSensors();
+  }
 }

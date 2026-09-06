@@ -18,6 +18,10 @@ bool loadCydConfig(CydConfig &config) {
   config.serverRoot = prefs.getString("serverRoot", "");
   config.section = prefs.getString("section", "");
   config.inverseDisplay = prefs.getBool("inverseDisplay", false);
+  config.graphsEnabled = prefs.getBool("graphsEnabled", false);
+  for (uint8_t i = 0; i < 4; i++) {
+    config.graphChannels[i] = prefs.getInt(("graphCh" + String(i)).c_str(), i);
+  }
   prefs.end();
   return config.hasWifi();
 }
@@ -33,6 +37,10 @@ void saveCydConfig(const CydConfig &config) {
   prefs.putString("serverRoot", config.serverRoot);
   prefs.putString("section", config.section);
   prefs.putBool("inverseDisplay", config.inverseDisplay);
+  prefs.putBool("graphsEnabled", config.graphsEnabled);
+  for (uint8_t i = 0; i < 4; i++) {
+    prefs.putInt(("graphCh" + String(i)).c_str(), config.graphChannels[i]);
+  }
   prefs.end();
 }
 

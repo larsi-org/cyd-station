@@ -1,5 +1,6 @@
 #include "CydPortal.h"
 
+#include <ArduinoJson.h>
 #include <DNSServer.h>
 #include <WebServer.h>
 #include <WiFi.h>
@@ -230,6 +231,70 @@ std::vector<std::pair<String, String>> fetchStationList(const String &serverRoot
   return stations;
 }
 
+// Live {channel, label} pairs for one station, fetched from that station's json/sensors.php --
+// same endpoint and response shape Station.ino's fetchStationMetadata() already parses, just
+// duplicated here since the portal's fetch needs to run against whatever station is currently
+// selected in the form, before that station is even saved. Returns an empty list on any
+// connect/parse failure or if stationPrefix is blank, same "just show nothing found" fallback as
+// fetchStationList() above.
+std::vector<std::pair<int, String>> fetchChannelList(const String &serverRoot,
+                                                       const String &section,
+                                                       const String &stationPrefix) {
+  std::vector<std::pair<int, String>> channels;
+  if (stationPrefix.length() == 0) return channels;
+
+  String host, basePath;
+  if (!parseServerUrl(serverRoot + section + "/", host, basePath)) return channels;
+
+  WiFiClientSecure client;
+  client.setCACertBundle(kServerCertBundle, kServerCertBundleLen);
+  if (!client.connect(host.c_str(), 443)) return channels;
+
+  String path = basePath + "json/sensors.php?prefix=" + stationPrefix;
+  client.print(String("GET ") + path + " HTTP/1.1\r\n" + "Host: " + host + "\r\n" +
+               "User-Agent: cyd-larsi-org-station\r\n" + "Connection: close\r\n\r\n");
+
+  while (client.connected()) {
+    String line = client.readStringUntil('\n');
+    if (line == "\r") break;
+  }
+
+  JsonDocument doc;
+  DeserializationError err = deserializeJson(doc, client);
+  client.stop();
+  if (err) return channels;
+
+  JsonArray arr = doc["sensors"];
+  for (JsonObject s : arr) {
+    int ch = s["value"] | -1;
+    if (ch < 0) continue;
+    String property = String((const char *)(s["property"] | ""));
+    String unit = String((const char *)(s["unit"] | ""));
+    String label = property.length() > 0 ? property : ("Channel " + String(ch));
+    if (unit.length() > 0) label += " (" + unit + ")";
+    channels.push_back({ch, label});
+  }
+  return channels;
+}
+
+// One <select> per graph slot, all built from the same fetched channel list -- only which
+// option is "selected" differs (config.graphChannels[slot]).
+String buildChannelSelect(const String &name, const std::vector<std::pair<int, String>> &channels,
+                           int selected) {
+  String options;
+  if (channels.empty()) {
+    options = "<option value=\"\">No channels found -- pick a station and Refresh Stations "
+              "first</option>";
+  } else {
+    for (auto &c : channels) {
+      bool isSelected = c.first == selected;
+      options += "<option value=\"" + String(c.first) + "\"" + (isSelected ? " selected" : "") +
+                 ">" + htmlEscape(c.second) + "</option>";
+    }
+  }
+  return "<select name=\"" + name + "\">" + options + "</select>";
+}
+
 String buildStationFormPage() {
   CydConfig existing;
   loadCydConfig(existing);
@@ -251,6 +316,23 @@ String buildStationFormPage() {
   // value").
   bool cameFromReload = server.hasArg("section");
   bool inverseDisplay = cameFromReload ? server.hasArg("inverseDisplay") : existing.inverseDisplay;
+  bool graphsEnabled = cameFromReload ? server.hasArg("graphsEnabled") : existing.graphsEnabled;
+
+  // The station <select>'s own current value rides along on the "Refresh Stations" GET reload
+  // like any other form field, so the channel dropdowns can reflect whichever station is
+  // currently chosen in the form -- not just the last-saved one.
+  String stationPrefixForChannels =
+      server.hasArg("stationPrefix") ? server.arg("stationPrefix") : existing.stationPrefix;
+  std::vector<std::pair<int, String>> channels =
+      fetchChannelList(serverRoot, section, stationPrefixForChannels);
+
+  int graphChannels[4];
+  for (uint8_t i = 0; i < 4; i++) {
+    String argName = "graphChannel" + String(i);
+    graphChannels[i] = cameFromReload && server.hasArg(argName)
+                            ? server.arg(argName).toInt()
+                            : existing.graphChannels[i];
+  }
 
   std::vector<std::pair<String, String>> stations = fetchStationList(serverRoot, section);
 
@@ -293,6 +375,13 @@ String buildStationFormPage() {
   page += "<label>Station</label><select name=\"stationPrefix\">" + stationOptions + "</select>";
   page += "<label class=\"checkbox\"><input type=\"checkbox\" name=\"inverseDisplay\"" +
           String(inverseDisplay ? " checked" : "") + "> Inverse Display (white background)</label>";
+  page += "<label class=\"checkbox\"><input type=\"checkbox\" name=\"graphsEnabled\"" +
+          String(graphsEnabled ? " checked" : "") + "> Show Graphs (extra page, 4 mini history "
+          "graphs)</label>";
+  page += "<label>Graph 1</label>" + buildChannelSelect("graphChannel0", channels, graphChannels[0]);
+  page += "<label>Graph 2</label>" + buildChannelSelect("graphChannel1", channels, graphChannels[1]);
+  page += "<label>Graph 3</label>" + buildChannelSelect("graphChannel2", channels, graphChannels[2]);
+  page += "<label>Graph 4</label>" + buildChannelSelect("graphChannel3", channels, graphChannels[3]);
   // "Refresh Stations" (GET, reloads with whatever Server Root/Section are currently chosen)
   // comes first in the DOM so it's what fires on Enter -- pressing Enter while editing Server
   // Root should re-fetch the list, not accidentally save before the station selection even
@@ -342,6 +431,13 @@ void handleStationSave() {
   config.section = section;
   config.stationPrefix = stationPrefix;
   config.inverseDisplay = server.hasArg("inverseDisplay");  // absent entirely when unchecked
+  config.graphsEnabled = server.hasArg("graphsEnabled");    // absent entirely when unchecked
+  for (uint8_t i = 0; i < 4; i++) {
+    String argName = "graphChannel" + String(i);
+    if (server.hasArg(argName) && server.arg(argName).length() > 0) {
+      config.graphChannels[i] = server.arg(argName).toInt();
+    }
+  }
 
   saveCydConfig(config);
   server.send(200, "text/html", "<p>Saved. Rebooting...</p>");
