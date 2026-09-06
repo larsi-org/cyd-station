@@ -14,12 +14,12 @@ readings, and shows them on the display, auto-cycling through pages if there are
 on screen at once. A read-only API client -- no credentials required beyond WiFi, since both
 APIs serve public data.
 
-Optionally (Show Graphs, off by default) adds one more page: a 2x2 grid of mini history graphs
-for up to 4 configurable channels, pulled from the same `csv/data.php` history endpoint the main
-site's own report pages use. Each graph auto-scales its own y-axis from the fetched window's
-min/max, and the lookback window itself is picked per section (6h for sensors' ~12/hr logging
-rate, 48h for weather's ~1-2/hr) so both end up with a similar number of samples across the
-graph's width.
+Optionally (Show Graphs, off by default) adds one more page: a stack of 3 mini history graphs,
+one full-width row per configurable channel, pulled from the same `csv/data.php` history
+endpoint the main site's own report pages use. Each graph auto-scales its own y-axis from the
+fetched window's min/max, and the lookback window itself is picked per section (6h for sensors'
+~12/hr logging rate, 48h for weather's ~1-2/hr) so both end up with a similar number of samples
+across the graph's width.
 
 Both sections speak the same API shape (channel list + latest values), so this one sketch works
 against either -- which one a given device shows is just a matter of which server URL it's
@@ -40,8 +40,8 @@ form, no serial monitor needed:
    device back into AP mode to change anything later. Set a Server Root (defaults to
    `https://larsi.org/`) and a Section (Weather or Sensors), hit Refresh Stations to fetch that
    section's real station list from the server, then pick one -- no free-text station entry.
-   Optionally check Show Graphs and pick a channel for each of the 4 Graph dropdowns (also
-   live-fetched, from the currently-selected station) -- defaults to channels 0-3.
+   Optionally check Show Graphs and pick a channel for each of the 3 Graph dropdowns (also
+   live-fetched, from the currently-selected station) -- defaults to channels 0-2.
 
 Both stages save independently and restart the device; settings persist in NVS across reboots
 and firmware updates.

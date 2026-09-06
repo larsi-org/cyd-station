@@ -92,12 +92,12 @@ int sensorCount = 0;
 SensorReading readings[MAX_SENSORS];
 
 // --- Graphs (config.graphsEnabled) --------------------------------------------------------
-// One extra page, after the paginated value-list pages above, showing up to 4 mini history
-// graphs (config.graphChannels) as a 2x2 grid. Sensors and weather stations log at very
+// One extra page, after the paginated value-list pages above, showing up to 3 mini history
+// graphs (config.graphChannels), stacked one per row. Sensors and weather stations log at very
 // different rates (~12/hr vs ~1-2/hr -- see csv/data.php's shared t_min/t_max/sensors
 // protocol), so the lookback window is picked per section to land a similar number of samples
 // across GRAPH_COLUMNS either way.
-const int NUM_GRAPHS = 4;
+const int NUM_GRAPHS = 3;
 const int GRAPH_COLUMNS = 48;
 const unsigned long SENSORS_GRAPH_WINDOW_S = 6UL * 3600UL;    // ~72 samples at 12/hr
 const unsigned long WEATHER_GRAPH_WINDOW_S = 48UL * 3600UL;   // ~48-96 samples at 1-2/hr
@@ -392,7 +392,7 @@ void fetchGraphData() {
   graphTMin = tMax > graphWindowSeconds ? tMax - graphWindowSeconds : 0;
 
   String sensorsParam = String(config.graphChannels[0]) + "," + String(config.graphChannels[1]) +
-                         "," + String(config.graphChannels[2]) + "," + String(config.graphChannels[3]);
+                         "," + String(config.graphChannels[2]);
   String path = apiBasePath + "csv/data.php?prefix=" + config.stationPrefix +
                 "&sensors=" + sensorsParam + "&t_min=" + String(graphTMin) + "&t_max=" + String(tMax);
   graphSkippedHeader = false;
@@ -518,10 +518,10 @@ void drawSensors() {
   tft.print("Config: " + WiFi.localIP().toString());
 }
 
-// 2x2 grid of mini history graphs (config.graphChannels), one extra page after the value-list
-// pages above -- see drawCurrentPage(). Each cell scales its own y-axis from that channel's own
-// min/max over the fetched window (fetchGraphData()) rather than any fixed range, since a given
-// slot could hold anything from a temperature to a wind speed.
+// Stack of mini history graphs (config.graphChannels), one full-width row per channel, one extra
+// page after the value-list pages above -- see drawCurrentPage(). Each row scales its own y-axis
+// from that channel's own min/max over the fetched window (fetchGraphData()) rather than any
+// fixed range, since a given slot could hold anything from a temperature to a wind speed.
 void drawGraphs() {
   tft.fillScreen(colorBg());
 
@@ -542,15 +542,13 @@ void drawGraphs() {
   const int areaLeft = 6;
   const int areaRight = 234;
   const int gap = 6;
-  const int cellWidth = (areaRight - areaLeft - gap) / 2;
-  const int cellHeight = (areaBottom - areaTop - gap) / 2;
+  const int cellWidth = areaRight - areaLeft;
+  const int cellHeight = (areaBottom - areaTop - (NUM_GRAPHS - 1) * gap) / NUM_GRAPHS;
   const int labelHeight = 20;
 
   for (int i = 0; i < NUM_GRAPHS; i++) {
-    int col = i % 2;
-    int row = i / 2;
-    int cellX = areaLeft + col * (cellWidth + gap);
-    int cellY = areaTop + row * (cellHeight + gap);
+    int cellX = areaLeft;
+    int cellY = areaTop + i * (cellHeight + gap);
 
     int channel = config.graphChannels[i];
     int idx = findSensorIndex(channel);

@@ -326,8 +326,8 @@ String buildStationFormPage() {
   std::vector<std::pair<int, String>> channels =
       fetchChannelList(serverRoot, section, stationPrefixForChannels);
 
-  int graphChannels[4];
-  for (uint8_t i = 0; i < 4; i++) {
+  int graphChannels[3];
+  for (uint8_t i = 0; i < 3; i++) {
     String argName = "graphChannel" + String(i);
     graphChannels[i] = cameFromReload && server.hasArg(argName)
                             ? server.arg(argName).toInt()
@@ -376,12 +376,11 @@ String buildStationFormPage() {
   page += "<label class=\"checkbox\"><input type=\"checkbox\" name=\"inverseDisplay\"" +
           String(inverseDisplay ? " checked" : "") + "> Inverse Display (white background)</label>";
   page += "<label class=\"checkbox\"><input type=\"checkbox\" name=\"graphsEnabled\"" +
-          String(graphsEnabled ? " checked" : "") + "> Show Graphs (extra page, 4 mini history "
+          String(graphsEnabled ? " checked" : "") + "> Show Graphs (extra page, 3 mini history "
           "graphs)</label>";
   page += "<label>Graph 1</label>" + buildChannelSelect("graphChannel0", channels, graphChannels[0]);
   page += "<label>Graph 2</label>" + buildChannelSelect("graphChannel1", channels, graphChannels[1]);
   page += "<label>Graph 3</label>" + buildChannelSelect("graphChannel2", channels, graphChannels[2]);
-  page += "<label>Graph 4</label>" + buildChannelSelect("graphChannel3", channels, graphChannels[3]);
   // "Refresh Stations" (GET, reloads with whatever Server Root/Section are currently chosen)
   // comes first in the DOM so it's what fires on Enter -- pressing Enter while editing Server
   // Root should re-fetch the list, not accidentally save before the station selection even
@@ -432,7 +431,7 @@ void handleStationSave() {
   config.stationPrefix = stationPrefix;
   config.inverseDisplay = server.hasArg("inverseDisplay");  // absent entirely when unchecked
   config.graphsEnabled = server.hasArg("graphsEnabled");    // absent entirely when unchecked
-  for (uint8_t i = 0; i < 4; i++) {
+  for (uint8_t i = 0; i < 3; i++) {
     String argName = "graphChannel" + String(i);
     if (server.hasArg(argName) && server.arg(argName).length() > 0) {
       config.graphChannels[i] = server.arg(argName).toInt();
