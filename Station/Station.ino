@@ -100,6 +100,7 @@ SensorReading readings[MAX_SENSORS];
 // same. See csv/data.php's shared t_min/t_max/sensors protocol for the fetch itself.
 const int NUM_GRAPHS = 3;
 const int GRAPH_COLUMNS = 72;
+const int GRID_SECTIONS = 6;  // vertical dividers -- 12h/section for weather, 1h/section for sensors
 const unsigned long SENSORS_GRAPH_WINDOW_S = 6UL * 3600UL;    // ~72 samples at 12/hr
 const unsigned long WEATHER_GRAPH_WINDOW_S = 72UL * 3600UL;   // ~72 samples at 1/hr
 
@@ -572,13 +573,24 @@ void drawGraphs() {
     } else {
       tft.setTextColor(colorError());
       tft.print("no data");
-      continue;
     }
 
     int plotX = cellX;
     int plotY = cellY + labelHeight;
     int plotW = cellWidth;
     int plotH = cellHeight - labelHeight;
+
+    // Bounding box + interior dividers splitting the window into GRID_SECTIONS equal spans --
+    // 12h each for weather's 72h window, 1h each for sensors' 6h window. GRAPH_COLUMNS (72) is a
+    // multiple of GRID_SECTIONS (6) so every divider falls exactly on a column boundary, no
+    // fractional pixels.
+    tft.drawRect(plotX, plotY, plotW, plotH, colorMuted());
+    for (int s = 1; s < GRID_SECTIONS; s++) {
+      int gx = plotX + s * plotW / GRID_SECTIONS;
+      tft.drawFastVLine(gx, plotY, plotH, colorMuted());
+    }
+
+    if (!graphHasData[i]) continue;
 
     float vmin = graphGlobalMin[i];
     float vmax = graphGlobalMax[i];
