@@ -1,4 +1,3 @@
-secrets.h
+.DS_Store
 build/
 *.bak
-.DS_Store
