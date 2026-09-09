@@ -232,7 +232,7 @@ std::vector<std::pair<String, String>> fetchStationList(const String &serverRoot
 }
 
 // Live {channel, label} pairs for one station, fetched from that station's json/sensors.php --
-// same endpoint and response shape Station.ino's fetchStationMetadata() already parses, just
+// same endpoint and response shape cyd-larsi-org.ino's fetchStationMetadata() already parses, just
 // duplicated here since the portal's fetch needs to run against whatever station is currently
 // selected in the form, before that station is even saved. Returns an empty list on any
 // connect/parse failure or if stationPrefix is blank, same "just show nothing found" fallback as
