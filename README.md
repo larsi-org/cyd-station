@@ -1,4 +1,4 @@
-# cyd-larsi-org
+# cyd-station
 
 Arduino sketches turning a [Cheap Yellow Display](https://github.com/witnessmenow/ESP32-Cheap-Yellow-Display)
 (`ESP32-2432S028R`) into a dedicated status display for [larsi.org](https://larsi.org)'s own

@@ -206,7 +206,7 @@ std::vector<std::pair<String, String>> fetchStationList(const String &serverRoot
   if (!client.connect(host.c_str(), 443)) return stations;
 
   client.print(String("GET ") + basePath + "csv/locations.php HTTP/1.1\r\n" + "Host: " + host +
-               "\r\n" + "User-Agent: cyd-larsi-org-station\r\n" + "Connection: close\r\n\r\n");
+               "\r\n" + "User-Agent: cyd-station\r\n" + "Connection: close\r\n\r\n");
 
   while (client.connected()) {
     String line = client.readStringUntil('\n');
@@ -232,7 +232,7 @@ std::vector<std::pair<String, String>> fetchStationList(const String &serverRoot
 }
 
 // Live {channel, label} pairs for one station, fetched from that station's json/sensors.php --
-// same endpoint and response shape cyd-larsi-org.ino's fetchStationMetadata() already parses, just
+// same endpoint and response shape cyd-station.ino's fetchStationMetadata() already parses, just
 // duplicated here since the portal's fetch needs to run against whatever station is currently
 // selected in the form, before that station is even saved. Returns an empty list on any
 // connect/parse failure or if stationPrefix is blank, same "just show nothing found" fallback as
@@ -252,7 +252,7 @@ std::vector<std::pair<int, String>> fetchChannelList(const String &serverRoot,
 
   String path = basePath + "json/sensors.php?prefix=" + stationPrefix;
   client.print(String("GET ") + path + " HTTP/1.1\r\n" + "Host: " + host + "\r\n" +
-               "User-Agent: cyd-larsi-org-station\r\n" + "Connection: close\r\n\r\n");
+               "User-Agent: cyd-station\r\n" + "Connection: close\r\n\r\n");
 
   while (client.connected()) {
     String line = client.readStringUntil('\n');

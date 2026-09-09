@@ -270,7 +270,7 @@ bool httpsGetLines(const String &path, void (*onLine)(const String &line)) {
   }
   client.print(String("GET ") + path + " HTTP/1.1\r\n" +
                "Host: " + apiHost + "\r\n" +
-               "User-Agent: cyd-larsi-org-station\r\n" +
+               "User-Agent: cyd-station\r\n" +
                "Connection: close\r\n\r\n");
   skipHttpHeaders(client);
   while (client.connected() || client.available()) {
@@ -293,7 +293,7 @@ bool fetchStationMetadata() {
   String path = apiBasePath + "json/sensors.php?prefix=" + config.stationPrefix;
   client.print(String("GET ") + path + " HTTP/1.1\r\n" +
                "Host: " + apiHost + "\r\n" +
-               "User-Agent: cyd-larsi-org-station\r\n" +
+               "User-Agent: cyd-station\r\n" +
                "Connection: close\r\n\r\n");
   skipHttpHeaders(client);
 
