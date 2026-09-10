@@ -7,10 +7,7 @@
 // Works against either the weather or sensors section -- both speak the same API shape
 // (json/sensors.php?prefix=X for channel metadata, csv/current.php?prefix=X for latest values
 // as channel,value,epoch rows), so which one this device shows is purely a matter of which
-// server URL it's configured with at setup time, not a compile-time choice. (This started as
-// two separate near-identical sketches, WeatherStation and SensorsStation -- merged once it was
-// clear every change had to be made twice, identically, for no functional reason.) See this
-// repo's README for why the wire parameter stayed `prefix` rather than `station`.
+// server URL it's configured with at setup time, not a compile-time choice.
 //
 // Wi-Fi, station prefix, and server URL are all set at runtime via a captive setup portal
 // (CydPortal.h) rather than compiled in -- on first boot, or whenever none of the up-to-3

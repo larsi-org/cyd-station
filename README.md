@@ -1,6 +1,6 @@
 # cyd-station
 
-Arduino sketches turning a [Cheap Yellow Display](https://github.com/witnessmenow/ESP32-Cheap-Yellow-Display)
+An Arduino sketch turning a [Cheap Yellow Display](https://github.com/witnessmenow/ESP32-Cheap-Yellow-Display)
 (`ESP32-2432S028R`) into a dedicated status display for [larsi.org](https://larsi.org)'s own
 APIs -- no third-party weather service, no cloud dashboard, just the CYD's screen polling the
 same site that already tracks this data. Background and hardware notes are on the site itself,
@@ -8,10 +8,12 @@ at [larsi.org/make/cyd/](https://larsi.org/make/cyd/).
 
 ## Sketch
 
-**Station** -- polls one of [larsi.org/weather/](https://larsi.org/weather/) or
+**cyd-station.ino** -- polls one of [larsi.org/weather/](https://larsi.org/weather/) or
 [larsi.org/sensors/](https://larsi.org/sensors/)'s API for one station's channel list and latest
 readings, and shows them on the display. A read-only API client -- no credentials required
-beyond WiFi, since both APIs serve public data.
+beyond WiFi, since both APIs serve public data. Both sections speak the same API shape (channel
+list + latest values), so which one a given device shows is just a matter of which server URL
+it's configured with, not a compile-time choice.
 
 The Display setting (Text Only, Graphs Only, or Text & Graphs -- defaults to Text Only) picks
 what auto-cycles onto the screen (10s per page): the paginated value-list pages, a single page
@@ -20,12 +22,6 @@ the same `csv/data.php` history endpoint the main site's own report pages use), 
 sequence. Each graph auto-scales its own y-axis from the fetched window's min/max, and the
 lookback window itself is picked per section (6h for sensors' ~12/hr logging rate, 72h/3 days for
 weather's ~1/hr) so both land roughly one sample per column across the graph's 72 columns.
-
-Both sections speak the same API shape (channel list + latest values), so this one sketch works
-against either -- which one a given device shows is just a matter of which server URL it's
-configured with, not a compile-time choice. (Used to be two separate, near-identical sketches,
-WeatherStation and SensorsStation -- merged once every change had to be made twice, identically,
-for no functional reason.)
 
 ## Setup
 
