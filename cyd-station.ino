@@ -39,6 +39,12 @@
 #define TFT_RST   -1  // tied to EN
 #define TFT_BL    21  // backlight, driven HIGH for full brightness
 
+// Onboard RGB status LED -- unused by this sketch, but left floating it reads as a dim glow
+// (active-low, so an undriven pin partially conducts) rather than fully off.
+#define LED_R 4
+#define LED_G 16
+#define LED_B 17
+
 #define SCREEN_ROTATION 0  // portrait; use 2 if mounted upside down
 
 SPIClass hspi(HSPI);
@@ -97,7 +103,7 @@ SensorReading readings[MAX_SENSORS];
 // same. See csv/data.php's shared t_min/t_max/sensors protocol for the fetch itself.
 const int NUM_GRAPHS = 3;
 const int GRAPH_COLUMNS = 72;
-const int GRID_SECTIONS = 6;  // vertical dividers -- 12h/section for weather, 1h/section for sensors
+const int GRID_SECTIONS = 3;  // vertical dividers -- 24h/section for weather, 2h/section for sensors
 const unsigned long SENSORS_GRAPH_WINDOW_S = 6UL * 3600UL;    // ~72 samples at 12/hr
 const unsigned long WEATHER_GRAPH_WINDOW_S = 72UL * 3600UL;   // ~72 samples at 1/hr
 
@@ -144,6 +150,13 @@ void setup() {
 
   pinMode(TFT_BL, OUTPUT);
   digitalWrite(TFT_BL, HIGH);
+
+  pinMode(LED_R, OUTPUT);
+  pinMode(LED_G, OUTPUT);
+  pinMode(LED_B, OUTPUT);
+  digitalWrite(LED_R, HIGH);
+  digitalWrite(LED_G, HIGH);
+  digitalWrite(LED_B, HIGH);
 
   hspi.begin(TFT_SCLK, TFT_MISO, TFT_MOSI, TFT_CS);
   tft.begin();
@@ -436,22 +449,33 @@ int totalPages() {
 // Theme colors -- config.inverseDisplay swaps the default dark background for white, with a
 // separate set of darker text colors chosen for contrast/legibility against white rather than
 // just reusing the dark-mode palette (the default YELLOW/LIGHTGREY read fine on black but are
-// nearly invisible on white).
+// nearly invisible on white). Inverse-mode values are named RGB565 constants, computed once at
+// compile time (same packing as Adafruit_SPITFT::color565) rather than calling tft.color565() --
+// a runtime call re-done on every single draw -- for the same 10-or-so fixed colors every time.
+constexpr uint16_t rgb565(uint8_t r, uint8_t g, uint8_t b) {
+  return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
+}
+
+constexpr uint16_t COLOR_HEADER_INV = rgb565(0, 70, 140);
+constexpr uint16_t COLOR_MUTED_INV = rgb565(140, 140, 140);
+// Dimmer and more neutral than COLOR_MUTED_INV/ILI9341_DARKGREY, which read slightly
+// green-tinted on this panel -- distracting on the graphs' bounding box/dividers, which have no
+// text to stay legible against and so can sit further back than colorMuted()'s text uses.
+constexpr uint16_t COLOR_GRID_DARK = rgb565(72, 72, 72);
+constexpr uint16_t COLOR_GRID_INV = rgb565(215, 215, 215);
+constexpr uint16_t COLOR_LABEL_INV = rgb565(60, 60, 60);
+// d3.easygraph's default palette's first color (Qualitative.Tableau10, "#4e79a7").
+constexpr uint16_t COLOR_VALUE_INV = rgb565(78, 121, 167);
+constexpr uint16_t COLOR_STATUS_INV = rgb565(40, 40, 40);
+
 uint16_t colorBg() { return config.inverseDisplay ? ILI9341_WHITE : ILI9341_BLACK; }
-uint16_t colorHeader() { return config.inverseDisplay ? tft.color565(0, 70, 140) : ILI9341_CYAN; }
-uint16_t colorMuted() {
-  return config.inverseDisplay ? tft.color565(140, 140, 140) : ILI9341_DARKGREY;
-}
-uint16_t colorLabel() {
-  return config.inverseDisplay ? tft.color565(60, 60, 60) : ILI9341_LIGHTGREY;
-}
-uint16_t colorValue() {
-  return config.inverseDisplay ? tft.color565(180, 120, 0) : ILI9341_YELLOW;
-}
+uint16_t colorHeader() { return config.inverseDisplay ? COLOR_HEADER_INV : ILI9341_CYAN; }
+uint16_t colorMuted() { return config.inverseDisplay ? COLOR_MUTED_INV : ILI9341_DARKGREY; }
+uint16_t colorGrid() { return config.inverseDisplay ? COLOR_GRID_INV : COLOR_GRID_DARK; }
+uint16_t colorLabel() { return config.inverseDisplay ? COLOR_LABEL_INV : ILI9341_LIGHTGREY; }
+uint16_t colorValue() { return config.inverseDisplay ? COLOR_VALUE_INV : ILI9341_YELLOW; }
 uint16_t colorError() { return ILI9341_RED; }  // reads fine on both backgrounds as-is
-uint16_t colorStatusText() {
-  return config.inverseDisplay ? tft.color565(40, 40, 40) : ILI9341_WHITE;
-}
+uint16_t colorStatusText() { return config.inverseDisplay ? COLOR_STATUS_INV : ILI9341_WHITE; }
 
 void drawStatus(const String &message) {
   tft.fillScreen(colorBg());
@@ -578,13 +602,13 @@ void drawGraphs() {
     int plotH = cellHeight - labelHeight;
 
     // Bounding box + interior dividers splitting the window into GRID_SECTIONS equal spans --
-    // 12h each for weather's 72h window, 1h each for sensors' 6h window. GRAPH_COLUMNS (72) is a
-    // multiple of GRID_SECTIONS (6) so every divider falls exactly on a column boundary, no
+    // 24h each for weather's 72h window, 2h each for sensors' 6h window. GRAPH_COLUMNS (72) is a
+    // multiple of GRID_SECTIONS (3) so every divider falls exactly on a column boundary, no
     // fractional pixels.
-    tft.drawRect(plotX, plotY, plotW, plotH, colorMuted());
+    tft.drawRect(plotX, plotY, plotW, plotH, colorGrid());
     for (int s = 1; s < GRID_SECTIONS; s++) {
       int gx = plotX + s * plotW / GRID_SECTIONS;
-      tft.drawFastVLine(gx, plotY, plotH, colorMuted());
+      tft.drawFastVLine(gx, plotY, plotH, colorGrid());
     }
 
     if (!graphHasData[i]) continue;
@@ -617,9 +641,9 @@ void drawGraphs() {
       int x = plotX + c * plotW / GRAPH_COLUMNS;
       int y = plotY + plotH - 1 - (int)((avg - vmin) / (vmax - vmin) * (plotH - 1));
       if (havePrevPoint) {
-        tft.drawLine(prevX, prevY, x, y, colorValue());  // Bresenham, via Adafruit_GFX
+        tft.drawLine(prevX, prevY, x, y, colorHeader());  // Bresenham, via Adafruit_GFX
       } else {
-        tft.drawPixel(x, y, colorValue());
+        tft.drawPixel(x, y, colorHeader());
       }
       prevX = x;
       prevY = y;
