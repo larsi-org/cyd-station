@@ -1,3 +1,8 @@
+// CydPortal.h
+// MIT License
+// https://opensource.org/licenses/MIT
+// Copyright (c) 2026, Lars Schumann, larsi.org@gmail.com
+//
 #pragma once
 
 #include <Arduino.h>

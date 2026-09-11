@@ -1,3 +1,8 @@
+// cyd-station.ino
+// MIT License
+// https://opensource.org/licenses/MIT
+// Copyright (c) 2026, Lars Schumann, larsi.org@gmail.com
+//
 // Cheap Yellow Display (ESP32-2432S028R) status station.
 //
 // Polls one of larsi.org's read-only APIs (github.com/larsi-org/html) for a station's channel
@@ -25,6 +30,7 @@
 #include <time.h>
 
 #include "CertBundle.h"
+#include "color565.h"
 #include "CydConfig.h"
 #include "CydPortal.h"
 
@@ -161,7 +167,7 @@ void setup() {
   hspi.begin(TFT_SCLK, TFT_MISO, TFT_MOSI, TFT_CS);
   tft.begin();
   tft.setRotation(SCREEN_ROTATION);
-  tft.fillScreen(ILI9341_BLACK);
+  tft.fillScreen(colorBg());
   drawStatus("Starting...");
 
   bool haveWifi = loadCydConfig(config);
@@ -446,36 +452,17 @@ int totalPages() {
 
 // --- Display -----------------------------------------------------------------------------
 
-// Theme colors -- config.inverseDisplay swaps the default dark background for white, with a
-// separate set of darker text colors chosen for contrast/legibility against white rather than
-// just reusing the dark-mode palette (the default YELLOW/LIGHTGREY read fine on black but are
-// nearly invisible on white). Inverse-mode values are named RGB565 constants, computed once at
-// compile time (same packing as Adafruit_SPITFT::color565) rather than calling tft.color565() --
-// a runtime call re-done on every single draw -- for the same 10-or-so fixed colors every time.
-constexpr uint16_t rgb565(uint8_t r, uint8_t g, uint8_t b) {
-  return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
-}
-
-constexpr uint16_t COLOR_HEADER_INV = rgb565(0, 70, 140);
-constexpr uint16_t COLOR_MUTED_INV = rgb565(140, 140, 140);
-// Dimmer and more neutral than COLOR_MUTED_INV/ILI9341_DARKGREY, which read slightly
-// green-tinted on this panel -- distracting on the graphs' bounding box/dividers, which have no
-// text to stay legible against and so can sit further back than colorMuted()'s text uses.
-constexpr uint16_t COLOR_GRID_DARK = rgb565(72, 72, 72);
-constexpr uint16_t COLOR_GRID_INV = rgb565(215, 215, 215);
-constexpr uint16_t COLOR_LABEL_INV = rgb565(60, 60, 60);
-// d3.easygraph's default palette's first color (Qualitative.Tableau10, "#4e79a7").
-constexpr uint16_t COLOR_VALUE_INV = rgb565(78, 121, 167);
-constexpr uint16_t COLOR_STATUS_INV = rgb565(40, 40, 40);
-
-uint16_t colorBg() { return config.inverseDisplay ? ILI9341_WHITE : ILI9341_BLACK; }
-uint16_t colorHeader() { return config.inverseDisplay ? COLOR_HEADER_INV : ILI9341_CYAN; }
-uint16_t colorMuted() { return config.inverseDisplay ? COLOR_MUTED_INV : ILI9341_DARKGREY; }
-uint16_t colorGrid() { return config.inverseDisplay ? COLOR_GRID_INV : COLOR_GRID_DARK; }
-uint16_t colorLabel() { return config.inverseDisplay ? COLOR_LABEL_INV : ILI9341_LIGHTGREY; }
-uint16_t colorValue() { return config.inverseDisplay ? COLOR_VALUE_INV : ILI9341_YELLOW; }
-uint16_t colorError() { return ILI9341_RED; }  // reads fine on both backgrounds as-is
-uint16_t colorStatusText() { return config.inverseDisplay ? COLOR_STATUS_INV : ILI9341_WHITE; }
+// Theme colors, from color565.h's shared web-safe palette (larsi.org/graphics/colors/) --
+// config.inverseDisplay swaps the default dark background for white, with a separate set of
+// colors chosen for contrast/legibility against white.
+uint16_t colorBg() { return config.inverseDisplay ? COLOR565_WHITE : COLOR565_BLACK; }
+uint16_t colorHeader() { return config.inverseDisplay ? COLOR565_DEEP_SKY_BLUE4 : COLOR565_CYAN; }
+uint16_t colorMuted() { return config.inverseDisplay ? COLOR565_GRAY : COLOR565_DIM_GRAY; }
+uint16_t colorGrid() { return config.inverseDisplay ? COLOR565_LIGHT_GRAY : COLOR565_DARK_CHARCOAL; }
+uint16_t colorLabel() { return config.inverseDisplay ? COLOR565_DIM_GRAY : COLOR565_LIGHT_GRAY; }
+uint16_t colorValue() { return config.inverseDisplay ? COLOR565_STEEL_BLUE4 : COLOR565_YELLOW; }
+uint16_t colorError() { return COLOR565_RED; }  // reads fine on both backgrounds as-is
+uint16_t colorStatusText() { return config.inverseDisplay ? COLOR565_DARK_CHARCOAL : COLOR565_WHITE; }
 
 void drawStatus(const String &message) {
   tft.fillScreen(colorBg());

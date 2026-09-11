@@ -1,3 +1,8 @@
+// CydConfig.cpp
+// MIT License
+// https://opensource.org/licenses/MIT
+// Copyright (c) 2026, Lars Schumann, larsi.org@gmail.com
+//
 #include "CydConfig.h"
 
 #include <Preferences.h>

@@ -1,8 +1,13 @@
+// CertBundle.h
+// MIT License
+// https://opensource.org/licenses/MIT
+// Copyright (c) 2026, Lars Schumann, larsi.org@gmail.com
+//
+// This exact file is shared byte-for-byte across every project that needs it (currently
+// `sensor-node` and `cyd-station`) -- if larsi.org's TLS provider changes, regenerate it here
+// (see the instructions further down) and copy the result, unchanged, into every consumer
+// rather than hand-editing a copy.
 #pragma once
-
-// Copied from the `sensor-node` repo's src/SensorNodeCertBundle.h, which is the source of
-// truth -- re-copy from there (or regenerate per its instructions below) if larsi.org's TLS
-// provider ever changes rather than hand-editing this file.
 
 #include <stdint.h>
 

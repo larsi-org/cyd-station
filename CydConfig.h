@@ -1,3 +1,8 @@
+// CydConfig.h
+// MIT License
+// https://opensource.org/licenses/MIT
+// Copyright (c) 2026, Lars Schumann, larsi.org@gmail.com
+//
 #pragma once
 
 // Trimmed down from sensor-node's SensorNodeConfig.h (~/Arduino/libraries/sensor-node) -- same

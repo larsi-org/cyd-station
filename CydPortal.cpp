@@ -1,3 +1,8 @@
+// CydPortal.cpp
+// MIT License
+// https://opensource.org/licenses/MIT
+// Copyright (c) 2026, Lars Schumann, larsi.org@gmail.com
+//
 #include "CydPortal.h"
 
 #include <ArduinoJson.h>

@@ -60,6 +60,10 @@ default VSPI pins. No external parts needed.
 Verifies larsi.org's TLS certificate against a small curated CA bundle (`CertBundle.h`) rather
 than skipping verification -- see that file's header comment for where it comes from.
 
+Theme colors come from `color565.h`, the web-safe palette shared with `cyd-chess`
+([larsi.org/graphics/colors/](https://larsi.org/graphics/colors/) is the source of truth) --
+copy the latest version from there rather than hand-editing the local copy.
+
 ## License
 
 MIT -- see [LICENSE](LICENSE).
