@@ -455,14 +455,14 @@ int totalPages() {
 // Theme colors, from color565.h's shared web-safe palette (larsi.org/graphics/colors/) --
 // config.inverseDisplay swaps the default dark background for white, with a separate set of
 // colors chosen for contrast/legibility against white.
-uint16_t colorBg() { return config.inverseDisplay ? COLOR565_WHITE : COLOR565_BLACK; }
-uint16_t colorHeader() { return config.inverseDisplay ? COLOR565_DEEP_SKY_BLUE4 : COLOR565_CYAN; }
-uint16_t colorMuted() { return config.inverseDisplay ? COLOR565_GRAY : COLOR565_DIM_GRAY; }
-uint16_t colorGrid() { return config.inverseDisplay ? COLOR565_LIGHT_GRAY : COLOR565_DARK_CHARCOAL; }
-uint16_t colorLabel() { return config.inverseDisplay ? COLOR565_DIM_GRAY : COLOR565_LIGHT_GRAY; }
-uint16_t colorValue() { return config.inverseDisplay ? COLOR565_STEEL_BLUE4 : COLOR565_YELLOW; }
-uint16_t colorError() { return COLOR565_RED; }  // reads fine on both backgrounds as-is
-uint16_t colorStatusText() { return config.inverseDisplay ? COLOR565_DARK_CHARCOAL : COLOR565_WHITE; }
+uint16_t colorBg()         { return config.inverseDisplay ? COLOR565_WHITE          : COLOR565_BLACK;         }
+uint16_t colorHeader()     { return config.inverseDisplay ? COLOR565_DEEP_SKY_BLUE4 : COLOR565_CYAN;          }
+uint16_t colorMuted()      { return config.inverseDisplay ? COLOR565_GRAY           : COLOR565_DIM_GRAY;      }
+uint16_t colorGrid()       { return config.inverseDisplay ? COLOR565_LIGHT_GRAY     : COLOR565_DARK_CHARCOAL; }
+uint16_t colorLabel()      { return config.inverseDisplay ? COLOR565_DIM_GRAY       : COLOR565_LIGHT_GRAY;    }
+uint16_t colorValue()      { return config.inverseDisplay ? COLOR565_STEEL_BLUE4    : COLOR565_YELLOW;        }
+uint16_t colorError()      { return COLOR565_RED; }  // reads fine on both backgrounds as-is
+uint16_t colorStatusText() { return config.inverseDisplay ? COLOR565_DARK_CHARCOAL  : COLOR565_WHITE;         }
 
 void drawStatus(const String &message) {
   tft.fillScreen(colorBg());
