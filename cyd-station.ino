@@ -455,13 +455,13 @@ int totalPages() {
 // Theme colors, from color565.h's shared web-safe palette (larsi.org/graphics/colors/) --
 // config.inverseDisplay swaps the default dark background for white, with a separate set of
 // colors chosen for contrast/legibility against white.
-uint16_t colorBg()         { return config.inverseDisplay ? COLOR565_WHITE         : COLOR565_BLACK;         }
-uint16_t colorGrid()       { return config.inverseDisplay ? COLOR565_LIGHT_GRAY    : COLOR565_DARK_CHARCOAL; } // gray 1 notch from background
-uint16_t colorMuted()      { return config.inverseDisplay ? COLOR565_GRAY          : COLOR565_DIM_GRAY;      } // gray 2 notches from background
-uint16_t colorLabel()      { return config.inverseDisplay ? COLOR565_DIM_GRAY      : COLOR565_GRAY;          } // gray 3 notches from background
-uint16_t colorStatusText() { return config.inverseDisplay ? COLOR565_DARK_CHARCOAL : COLOR565_LIGHT_GRAY;    } // gray 4 notches from background
-uint16_t colorHeader()     { return config.inverseDisplay ? COLOR565_SKY_BLUE3     : COLOR565_STEEL_BLUE4;   } // blue 2 notches from background
-uint16_t colorValue()      { return config.inverseDisplay ? COLOR565_STEEL_BLUE4   : COLOR565_SKY_BLUE3;     } // blue 3 notches from background
+uint16_t colorBg()         { return config.inverseDisplay ? COLOR565_FFF : COLOR565_000; }
+uint16_t colorGrid()       { return config.inverseDisplay ? COLOR565_CCC : COLOR565_333; } // gray 1 notch from background
+uint16_t colorMuted()      { return config.inverseDisplay ? COLOR565_999 : COLOR565_666; } // gray 2 notches from background
+uint16_t colorLabel()      { return config.inverseDisplay ? COLOR565_666 : COLOR565_999; } // gray 3 notches from background
+uint16_t colorStatusText() { return config.inverseDisplay ? COLOR565_333 : COLOR565_CCC; } // gray 4 notches from background
+uint16_t colorHeader()     { return config.inverseDisplay ? COLOR565_69C : COLOR565_369; } // blue 2 notches from background
+uint16_t colorValue()      { return config.inverseDisplay ? COLOR565_369 : COLOR565_69C; } // blue 3 notches from background
 uint16_t colorError()      { return COLOR565_RED; }  // reads fine on both backgrounds as-is
 
 void drawStatus(const String &message) {

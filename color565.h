@@ -25,149 +25,369 @@ constexpr uint16_t rgb565(uint8_t r, uint8_t g, uint8_t b) {
   return ((r & 0xF8) << 8) | ((g & 0xF8) << 3) | (b >> 3);
 }
 
-constexpr uint16_t COLOR565_AQUAMARINE          = rgb565(104, 248, 208);
-constexpr uint16_t COLOR565_BLACK               = rgb565(  0,   0,   0);
-constexpr uint16_t COLOR565_BLUE                = rgb565(  0,   0, 248);
-constexpr uint16_t COLOR565_BROWN               = rgb565(152,  48,  48);
-constexpr uint16_t COLOR565_BROWN3              = rgb565(208,  48,  48);
-constexpr uint16_t COLOR565_BURLYWOOD1          = rgb565(248, 208, 152);
-constexpr uint16_t COLOR565_CADET_BLUE          = rgb565(104, 152, 152);
-constexpr uint16_t COLOR565_CHARTREUSE3         = rgb565(104, 208,   0);
-constexpr uint16_t COLOR565_CHARTREUSE4         = rgb565( 48, 152,   0);
-constexpr uint16_t COLOR565_CHOCOLATE           = rgb565(208, 104,  48);
-constexpr uint16_t COLOR565_CORAL               = rgb565(248, 104, 104);
-constexpr uint16_t COLOR565_CORNFLOWER_BLUE     = rgb565(104, 152, 248);
-constexpr uint16_t COLOR565_CRIMSON             = rgb565(208,   0,  48);
-constexpr uint16_t COLOR565_CYAN                = rgb565(  0, 248, 248);
-constexpr uint16_t COLOR565_DARK_BLUE           = rgb565(  0,   0, 152);
-constexpr uint16_t COLOR565_DARK_CHARCOAL       = rgb565( 48,  48,  48);
-constexpr uint16_t COLOR565_DARK_GOLDENROD      = rgb565(208, 152,   0);
-constexpr uint16_t COLOR565_DARK_GREEN          = rgb565(  0, 104,   0);
-constexpr uint16_t COLOR565_DARK_KHAKI          = rgb565(208, 208, 104);
-constexpr uint16_t COLOR565_DARK_OLIVE_GREEN    = rgb565(104, 104,  48);
-constexpr uint16_t COLOR565_DARK_OLIVE_GREEN1   = rgb565(208, 248, 104);
-constexpr uint16_t COLOR565_DARK_OLIVE_GREEN3   = rgb565(152, 208, 104);
-constexpr uint16_t COLOR565_DARK_ORANGE2        = rgb565(248, 104,   0);
-constexpr uint16_t COLOR565_DARK_ORANGE3        = rgb565(208, 104,   0);
-constexpr uint16_t COLOR565_DARK_ORCHID         = rgb565(152,  48, 208);
-constexpr uint16_t COLOR565_DARK_ORCHID1        = rgb565(208,  48, 248);
-constexpr uint16_t COLOR565_DARK_SEA_GREEN      = rgb565(152, 208, 152);
-constexpr uint16_t COLOR565_DARK_SEA_GREEN1     = rgb565(208, 248, 208);
-constexpr uint16_t COLOR565_DARK_SEA_GREEN4     = rgb565(104, 152, 104);
-constexpr uint16_t COLOR565_DARK_SLATE_BLUE     = rgb565( 48,  48, 152);
-constexpr uint16_t COLOR565_DARK_SLATE_GRAY     = rgb565( 48, 104, 104);
-constexpr uint16_t COLOR565_DARK_SLATE_GRAY3    = rgb565(104, 208, 208);
-constexpr uint16_t COLOR565_DARK_TURQUOISE      = rgb565(  0, 208, 208);
-constexpr uint16_t COLOR565_DARK_VIOLET         = rgb565(152,   0, 208);
-constexpr uint16_t COLOR565_DEEP_PINK           = rgb565(248,   0, 152);
-constexpr uint16_t COLOR565_DEEP_PINK3          = rgb565(208,   0, 104);
-constexpr uint16_t COLOR565_DEEP_PINK4          = rgb565(152,   0, 104);
-constexpr uint16_t COLOR565_DEEP_SKY_BLUE       = rgb565(  0, 208, 248);
-constexpr uint16_t COLOR565_DEEP_SKY_BLUE2      = rgb565(  0, 152, 248);
-constexpr uint16_t COLOR565_DEEP_SKY_BLUE3      = rgb565(  0, 152, 208);
-constexpr uint16_t COLOR565_DEEP_SKY_BLUE4      = rgb565(  0, 104, 152);
-constexpr uint16_t COLOR565_DIM_GRAY            = rgb565(104, 104, 104);
-constexpr uint16_t COLOR565_DODGER_BLUE         = rgb565( 48, 152, 248);
-constexpr uint16_t COLOR565_DODGER_BLUE3        = rgb565(  0, 104, 208);
-constexpr uint16_t COLOR565_FIREBRICK1          = rgb565(248,  48,  48);
-constexpr uint16_t COLOR565_FOREST_GREEN        = rgb565( 48, 152,  48);
-constexpr uint16_t COLOR565_GOLD                = rgb565(248, 208,   0);
-constexpr uint16_t COLOR565_GOLD4               = rgb565(152, 104,   0);
-constexpr uint16_t COLOR565_GOLDENROD1          = rgb565(248, 208,  48);
-constexpr uint16_t COLOR565_GRAY                = rgb565(152, 152, 152);
-constexpr uint16_t COLOR565_GREEN               = rgb565(  0, 152,   0);
-constexpr uint16_t COLOR565_GREEN3              = rgb565(  0, 208,   0);
-constexpr uint16_t COLOR565_GREEN_YELLOW        = rgb565(152, 248,  48);
-constexpr uint16_t COLOR565_HOT_PINK            = rgb565(248, 104, 208);
-constexpr uint16_t COLOR565_HOT_PINK2           = rgb565(248, 104, 152);
-constexpr uint16_t COLOR565_INDIAN_RED          = rgb565(208, 104, 104);
-constexpr uint16_t COLOR565_INDIGO              = rgb565( 48,   0, 152);
-constexpr uint16_t COLOR565_KHAKI               = rgb565(248, 248, 152);
-constexpr uint16_t COLOR565_LAWN_GREEN          = rgb565(104, 248,   0);
-constexpr uint16_t COLOR565_LEMON_CHIFFON       = rgb565(248, 248, 208);
-constexpr uint16_t COLOR565_LEMON_CHIFFON3      = rgb565(208, 208, 152);
-constexpr uint16_t COLOR565_LIGHT_CORAL         = rgb565(248, 152, 152);
-constexpr uint16_t COLOR565_LIGHT_CYAN          = rgb565(208, 248, 248);
-constexpr uint16_t COLOR565_LIGHT_GOLDENROD4    = rgb565(152, 152,  48);
-constexpr uint16_t COLOR565_LIGHT_GRAY          = rgb565(208, 208, 208);
-constexpr uint16_t COLOR565_LIGHT_PINK1         = rgb565(248, 152, 208);
-constexpr uint16_t COLOR565_LIGHT_SALMON3       = rgb565(208, 152, 104);
-constexpr uint16_t COLOR565_LIGHT_SEA_GREEN     = rgb565( 48, 152, 152);
-constexpr uint16_t COLOR565_LIGHT_SKY_BLUE      = rgb565(152, 208, 248);
-constexpr uint16_t COLOR565_LIGHT_SLATE_BLUE    = rgb565(152, 104, 248);
-constexpr uint16_t COLOR565_LIGHT_STEEL_BLUE    = rgb565(152, 208, 208);
-constexpr uint16_t COLOR565_LIGHT_STEEL_BLUE1   = rgb565(208, 208, 248);
-constexpr uint16_t COLOR565_LIGHT_YELLOW4       = rgb565(152, 152, 104);
-constexpr uint16_t COLOR565_LIME                = rgb565(  0, 248,   0);
-constexpr uint16_t COLOR565_LIME_GREEN          = rgb565( 48, 208,  48);
-constexpr uint16_t COLOR565_MAGENTA             = rgb565(248,   0, 248);
-constexpr uint16_t COLOR565_MAGENTA3            = rgb565(208,   0, 208);
-constexpr uint16_t COLOR565_MAROON              = rgb565(152,   0,   0);
-constexpr uint16_t COLOR565_MAROON1             = rgb565(248,  48, 208);
-constexpr uint16_t COLOR565_MEDIUM_AQUAMARINE   = rgb565(104, 208, 152);
-constexpr uint16_t COLOR565_MEDIUM_BLUE         = rgb565(  0,   0, 208);
-constexpr uint16_t COLOR565_MEDIUM_ORCHID2      = rgb565(208, 104, 248);
-constexpr uint16_t COLOR565_MEDIUM_PURPLE       = rgb565(152, 104, 208);
-constexpr uint16_t COLOR565_MEDIUM_PURPLE1      = rgb565(152, 152, 248);
-constexpr uint16_t COLOR565_MEDIUM_SEA_GREEN    = rgb565( 48, 208, 104);
-constexpr uint16_t COLOR565_MEDIUM_SLATE_BLUE   = rgb565(104, 104, 248);
-constexpr uint16_t COLOR565_MEDIUM_SPRING_GREEN = rgb565(  0, 248, 152);
-constexpr uint16_t COLOR565_MEDIUM_VIOLET_RED   = rgb565(208,   0, 152);
-constexpr uint16_t COLOR565_MIDNIGHT_BLUE       = rgb565(  0,   0, 104);
-constexpr uint16_t COLOR565_OLIVE               = rgb565(152, 152,   0);
-constexpr uint16_t COLOR565_OLIVE_DRAB          = rgb565(104, 152,  48);
-constexpr uint16_t COLOR565_OLIVE_DRAB1         = rgb565(208, 248,  48);
-constexpr uint16_t COLOR565_ORANGE              = rgb565(248, 152,   0);
-constexpr uint16_t COLOR565_ORANGE_RED          = rgb565(248,  48,   0);
-constexpr uint16_t COLOR565_ORANGE_RED3         = rgb565(208,  48,   0);
-constexpr uint16_t COLOR565_ORCHID              = rgb565(208, 104, 208);
-constexpr uint16_t COLOR565_ORCHID2             = rgb565(248, 104, 248);
-constexpr uint16_t COLOR565_ORCHID4             = rgb565(152,  48, 152);
-constexpr uint16_t COLOR565_PALE_GREEN          = rgb565(152, 248, 152);
-constexpr uint16_t COLOR565_PALE_GREEN3         = rgb565(104, 208, 104);
-constexpr uint16_t COLOR565_PALE_TURQUOISE      = rgb565(152, 248, 248);
-constexpr uint16_t COLOR565_PALE_VIOLET_RED     = rgb565(208, 104, 152);
-constexpr uint16_t COLOR565_PERU                = rgb565(208, 152,  48);
-constexpr uint16_t COLOR565_PINK                = rgb565(248, 208, 208);
-constexpr uint16_t COLOR565_PINK4               = rgb565(152, 104, 104);
-constexpr uint16_t COLOR565_PLUM                = rgb565(208, 152, 208);
-constexpr uint16_t COLOR565_PLUM1               = rgb565(248, 208, 248);
-constexpr uint16_t COLOR565_PLUM4               = rgb565(152, 104, 152);
-constexpr uint16_t COLOR565_PURPLE              = rgb565(152,   0, 152);
-constexpr uint16_t COLOR565_PURPLE1             = rgb565(152,  48, 248);
-constexpr uint16_t COLOR565_PURPLE3             = rgb565(104,  48, 208);
-constexpr uint16_t COLOR565_REBECCAPURPLE       = rgb565(104,  48, 152);
-constexpr uint16_t COLOR565_RED                 = rgb565(248,   0,   0);
-constexpr uint16_t COLOR565_RED3                = rgb565(208,   0,   0);
-constexpr uint16_t COLOR565_ROSY_BROWN          = rgb565(208, 152, 152);
-constexpr uint16_t COLOR565_ROYAL_BLUE          = rgb565( 48, 104, 208);
-constexpr uint16_t COLOR565_ROYAL_BLUE2         = rgb565( 48, 104, 248);
-constexpr uint16_t COLOR565_SADDLE_BROWN        = rgb565(152,  48,   0);
-constexpr uint16_t COLOR565_SANDY_BROWN         = rgb565(248, 152, 104);
-constexpr uint16_t COLOR565_SCARLET_FLAME       = rgb565(152,  48, 104);
-constexpr uint16_t COLOR565_SEA_GREEN           = rgb565( 48, 152, 104);
-constexpr uint16_t COLOR565_SEA_GREEN1          = rgb565(104, 248, 152);
-constexpr uint16_t COLOR565_SEA_GREEN3          = rgb565( 48, 208, 152);
-constexpr uint16_t COLOR565_SIENNA              = rgb565(152, 104,  48);
-constexpr uint16_t COLOR565_SKY_BLUE3           = rgb565(104, 152, 208);
-constexpr uint16_t COLOR565_SLATE_BLUE          = rgb565(104, 104, 208);
-constexpr uint16_t COLOR565_SLATE_GRAY4         = rgb565(104, 104, 152);
-constexpr uint16_t COLOR565_SPRING_GREEN        = rgb565(  0, 248, 104);
-constexpr uint16_t COLOR565_SPRING_GREEN3       = rgb565(  0, 208, 104);
-constexpr uint16_t COLOR565_SPRING_GREEN4       = rgb565(  0, 152,  48);
-constexpr uint16_t COLOR565_STEEL_BLUE          = rgb565( 48, 152, 208);
-constexpr uint16_t COLOR565_STEEL_BLUE1         = rgb565(104, 208, 248);
-constexpr uint16_t COLOR565_STEEL_BLUE4         = rgb565( 48, 104, 152);
-constexpr uint16_t COLOR565_TAN2                = rgb565(248, 152,  48);
-constexpr uint16_t COLOR565_TEAL                = rgb565(  0, 152, 152);
-constexpr uint16_t COLOR565_TOMATO              = rgb565(248, 104,  48);
-constexpr uint16_t COLOR565_TURQUOISE           = rgb565( 48, 208, 208);
-constexpr uint16_t COLOR565_VIOLET              = rgb565(248, 152, 248);
-constexpr uint16_t COLOR565_VIOLET_RED          = rgb565(208,  48, 152);
-constexpr uint16_t COLOR565_VIOLET_RED1         = rgb565(248,  48, 152);
-constexpr uint16_t COLOR565_VIOLET_RED3         = rgb565(208,  48, 104);
-constexpr uint16_t COLOR565_WHITE               = rgb565(248, 248, 248);
-constexpr uint16_t COLOR565_YELLOW              = rgb565(248, 248,   0);
-constexpr uint16_t COLOR565_YELLOW3             = rgb565(208, 208,   0);
-constexpr uint16_t COLOR565_YELLOW_GREEN        = rgb565(152, 208,  48);
+// All 216 web-safe colors, named directly by their hex triplet -- the one true set. Named
+// aliases for the subset with a common name are further below.
+constexpr uint16_t COLOR565_000 = rgb565(  0,   0,   0);
+constexpr uint16_t COLOR565_003 = rgb565(  0,   0,  48);
+constexpr uint16_t COLOR565_006 = rgb565(  0,   0, 104);
+constexpr uint16_t COLOR565_009 = rgb565(  0,   0, 152);
+constexpr uint16_t COLOR565_00C = rgb565(  0,   0, 208);
+constexpr uint16_t COLOR565_00F = rgb565(  0,   0, 248);
+constexpr uint16_t COLOR565_030 = rgb565(  0,  48,   0);
+constexpr uint16_t COLOR565_033 = rgb565(  0,  48,  48);
+constexpr uint16_t COLOR565_036 = rgb565(  0,  48, 104);
+constexpr uint16_t COLOR565_039 = rgb565(  0,  48, 152);
+constexpr uint16_t COLOR565_03C = rgb565(  0,  48, 208);
+constexpr uint16_t COLOR565_03F = rgb565(  0,  48, 248);
+constexpr uint16_t COLOR565_060 = rgb565(  0, 104,   0);
+constexpr uint16_t COLOR565_063 = rgb565(  0, 104,  48);
+constexpr uint16_t COLOR565_066 = rgb565(  0, 104, 104);
+constexpr uint16_t COLOR565_069 = rgb565(  0, 104, 152);
+constexpr uint16_t COLOR565_06C = rgb565(  0, 104, 208);
+constexpr uint16_t COLOR565_06F = rgb565(  0, 104, 248);
+constexpr uint16_t COLOR565_090 = rgb565(  0, 152,   0);
+constexpr uint16_t COLOR565_093 = rgb565(  0, 152,  48);
+constexpr uint16_t COLOR565_096 = rgb565(  0, 152, 104);
+constexpr uint16_t COLOR565_099 = rgb565(  0, 152, 152);
+constexpr uint16_t COLOR565_09C = rgb565(  0, 152, 208);
+constexpr uint16_t COLOR565_09F = rgb565(  0, 152, 248);
+constexpr uint16_t COLOR565_0C0 = rgb565(  0, 208,   0);
+constexpr uint16_t COLOR565_0C3 = rgb565(  0, 208,  48);
+constexpr uint16_t COLOR565_0C6 = rgb565(  0, 208, 104);
+constexpr uint16_t COLOR565_0C9 = rgb565(  0, 208, 152);
+constexpr uint16_t COLOR565_0CC = rgb565(  0, 208, 208);
+constexpr uint16_t COLOR565_0CF = rgb565(  0, 208, 248);
+constexpr uint16_t COLOR565_0F0 = rgb565(  0, 248,   0);
+constexpr uint16_t COLOR565_0F3 = rgb565(  0, 248,  48);
+constexpr uint16_t COLOR565_0F6 = rgb565(  0, 248, 104);
+constexpr uint16_t COLOR565_0F9 = rgb565(  0, 248, 152);
+constexpr uint16_t COLOR565_0FC = rgb565(  0, 248, 208);
+constexpr uint16_t COLOR565_0FF = rgb565(  0, 248, 248);
+constexpr uint16_t COLOR565_300 = rgb565( 48,   0,   0);
+constexpr uint16_t COLOR565_303 = rgb565( 48,   0,  48);
+constexpr uint16_t COLOR565_306 = rgb565( 48,   0, 104);
+constexpr uint16_t COLOR565_309 = rgb565( 48,   0, 152);
+constexpr uint16_t COLOR565_30C = rgb565( 48,   0, 208);
+constexpr uint16_t COLOR565_30F = rgb565( 48,   0, 248);
+constexpr uint16_t COLOR565_330 = rgb565( 48,  48,   0);
+constexpr uint16_t COLOR565_333 = rgb565( 48,  48,  48);
+constexpr uint16_t COLOR565_336 = rgb565( 48,  48, 104);
+constexpr uint16_t COLOR565_339 = rgb565( 48,  48, 152);
+constexpr uint16_t COLOR565_33C = rgb565( 48,  48, 208);
+constexpr uint16_t COLOR565_33F = rgb565( 48,  48, 248);
+constexpr uint16_t COLOR565_360 = rgb565( 48, 104,   0);
+constexpr uint16_t COLOR565_363 = rgb565( 48, 104,  48);
+constexpr uint16_t COLOR565_366 = rgb565( 48, 104, 104);
+constexpr uint16_t COLOR565_369 = rgb565( 48, 104, 152);
+constexpr uint16_t COLOR565_36C = rgb565( 48, 104, 208);
+constexpr uint16_t COLOR565_36F = rgb565( 48, 104, 248);
+constexpr uint16_t COLOR565_390 = rgb565( 48, 152,   0);
+constexpr uint16_t COLOR565_393 = rgb565( 48, 152,  48);
+constexpr uint16_t COLOR565_396 = rgb565( 48, 152, 104);
+constexpr uint16_t COLOR565_399 = rgb565( 48, 152, 152);
+constexpr uint16_t COLOR565_39C = rgb565( 48, 152, 208);
+constexpr uint16_t COLOR565_39F = rgb565( 48, 152, 248);
+constexpr uint16_t COLOR565_3C0 = rgb565( 48, 208,   0);
+constexpr uint16_t COLOR565_3C3 = rgb565( 48, 208,  48);
+constexpr uint16_t COLOR565_3C6 = rgb565( 48, 208, 104);
+constexpr uint16_t COLOR565_3C9 = rgb565( 48, 208, 152);
+constexpr uint16_t COLOR565_3CC = rgb565( 48, 208, 208);
+constexpr uint16_t COLOR565_3CF = rgb565( 48, 208, 248);
+constexpr uint16_t COLOR565_3F0 = rgb565( 48, 248,   0);
+constexpr uint16_t COLOR565_3F3 = rgb565( 48, 248,  48);
+constexpr uint16_t COLOR565_3F6 = rgb565( 48, 248, 104);
+constexpr uint16_t COLOR565_3F9 = rgb565( 48, 248, 152);
+constexpr uint16_t COLOR565_3FC = rgb565( 48, 248, 208);
+constexpr uint16_t COLOR565_3FF = rgb565( 48, 248, 248);
+constexpr uint16_t COLOR565_600 = rgb565(104,   0,   0);
+constexpr uint16_t COLOR565_603 = rgb565(104,   0,  48);
+constexpr uint16_t COLOR565_606 = rgb565(104,   0, 104);
+constexpr uint16_t COLOR565_609 = rgb565(104,   0, 152);
+constexpr uint16_t COLOR565_60C = rgb565(104,   0, 208);
+constexpr uint16_t COLOR565_60F = rgb565(104,   0, 248);
+constexpr uint16_t COLOR565_630 = rgb565(104,  48,   0);
+constexpr uint16_t COLOR565_633 = rgb565(104,  48,  48);
+constexpr uint16_t COLOR565_636 = rgb565(104,  48, 104);
+constexpr uint16_t COLOR565_639 = rgb565(104,  48, 152);
+constexpr uint16_t COLOR565_63C = rgb565(104,  48, 208);
+constexpr uint16_t COLOR565_63F = rgb565(104,  48, 248);
+constexpr uint16_t COLOR565_660 = rgb565(104, 104,   0);
+constexpr uint16_t COLOR565_663 = rgb565(104, 104,  48);
+constexpr uint16_t COLOR565_666 = rgb565(104, 104, 104);
+constexpr uint16_t COLOR565_669 = rgb565(104, 104, 152);
+constexpr uint16_t COLOR565_66C = rgb565(104, 104, 208);
+constexpr uint16_t COLOR565_66F = rgb565(104, 104, 248);
+constexpr uint16_t COLOR565_690 = rgb565(104, 152,   0);
+constexpr uint16_t COLOR565_693 = rgb565(104, 152,  48);
+constexpr uint16_t COLOR565_696 = rgb565(104, 152, 104);
+constexpr uint16_t COLOR565_699 = rgb565(104, 152, 152);
+constexpr uint16_t COLOR565_69C = rgb565(104, 152, 208);
+constexpr uint16_t COLOR565_69F = rgb565(104, 152, 248);
+constexpr uint16_t COLOR565_6C0 = rgb565(104, 208,   0);
+constexpr uint16_t COLOR565_6C3 = rgb565(104, 208,  48);
+constexpr uint16_t COLOR565_6C6 = rgb565(104, 208, 104);
+constexpr uint16_t COLOR565_6C9 = rgb565(104, 208, 152);
+constexpr uint16_t COLOR565_6CC = rgb565(104, 208, 208);
+constexpr uint16_t COLOR565_6CF = rgb565(104, 208, 248);
+constexpr uint16_t COLOR565_6F0 = rgb565(104, 248,   0);
+constexpr uint16_t COLOR565_6F3 = rgb565(104, 248,  48);
+constexpr uint16_t COLOR565_6F6 = rgb565(104, 248, 104);
+constexpr uint16_t COLOR565_6F9 = rgb565(104, 248, 152);
+constexpr uint16_t COLOR565_6FC = rgb565(104, 248, 208);
+constexpr uint16_t COLOR565_6FF = rgb565(104, 248, 248);
+constexpr uint16_t COLOR565_900 = rgb565(152,   0,   0);
+constexpr uint16_t COLOR565_903 = rgb565(152,   0,  48);
+constexpr uint16_t COLOR565_906 = rgb565(152,   0, 104);
+constexpr uint16_t COLOR565_909 = rgb565(152,   0, 152);
+constexpr uint16_t COLOR565_90C = rgb565(152,   0, 208);
+constexpr uint16_t COLOR565_90F = rgb565(152,   0, 248);
+constexpr uint16_t COLOR565_930 = rgb565(152,  48,   0);
+constexpr uint16_t COLOR565_933 = rgb565(152,  48,  48);
+constexpr uint16_t COLOR565_936 = rgb565(152,  48, 104);
+constexpr uint16_t COLOR565_939 = rgb565(152,  48, 152);
+constexpr uint16_t COLOR565_93C = rgb565(152,  48, 208);
+constexpr uint16_t COLOR565_93F = rgb565(152,  48, 248);
+constexpr uint16_t COLOR565_960 = rgb565(152, 104,   0);
+constexpr uint16_t COLOR565_963 = rgb565(152, 104,  48);
+constexpr uint16_t COLOR565_966 = rgb565(152, 104, 104);
+constexpr uint16_t COLOR565_969 = rgb565(152, 104, 152);
+constexpr uint16_t COLOR565_96C = rgb565(152, 104, 208);
+constexpr uint16_t COLOR565_96F = rgb565(152, 104, 248);
+constexpr uint16_t COLOR565_990 = rgb565(152, 152,   0);
+constexpr uint16_t COLOR565_993 = rgb565(152, 152,  48);
+constexpr uint16_t COLOR565_996 = rgb565(152, 152, 104);
+constexpr uint16_t COLOR565_999 = rgb565(152, 152, 152);
+constexpr uint16_t COLOR565_99C = rgb565(152, 152, 208);
+constexpr uint16_t COLOR565_99F = rgb565(152, 152, 248);
+constexpr uint16_t COLOR565_9C0 = rgb565(152, 208,   0);
+constexpr uint16_t COLOR565_9C3 = rgb565(152, 208,  48);
+constexpr uint16_t COLOR565_9C6 = rgb565(152, 208, 104);
+constexpr uint16_t COLOR565_9C9 = rgb565(152, 208, 152);
+constexpr uint16_t COLOR565_9CC = rgb565(152, 208, 208);
+constexpr uint16_t COLOR565_9CF = rgb565(152, 208, 248);
+constexpr uint16_t COLOR565_9F0 = rgb565(152, 248,   0);
+constexpr uint16_t COLOR565_9F3 = rgb565(152, 248,  48);
+constexpr uint16_t COLOR565_9F6 = rgb565(152, 248, 104);
+constexpr uint16_t COLOR565_9F9 = rgb565(152, 248, 152);
+constexpr uint16_t COLOR565_9FC = rgb565(152, 248, 208);
+constexpr uint16_t COLOR565_9FF = rgb565(152, 248, 248);
+constexpr uint16_t COLOR565_C00 = rgb565(208,   0,   0);
+constexpr uint16_t COLOR565_C03 = rgb565(208,   0,  48);
+constexpr uint16_t COLOR565_C06 = rgb565(208,   0, 104);
+constexpr uint16_t COLOR565_C09 = rgb565(208,   0, 152);
+constexpr uint16_t COLOR565_C0C = rgb565(208,   0, 208);
+constexpr uint16_t COLOR565_C0F = rgb565(208,   0, 248);
+constexpr uint16_t COLOR565_C30 = rgb565(208,  48,   0);
+constexpr uint16_t COLOR565_C33 = rgb565(208,  48,  48);
+constexpr uint16_t COLOR565_C36 = rgb565(208,  48, 104);
+constexpr uint16_t COLOR565_C39 = rgb565(208,  48, 152);
+constexpr uint16_t COLOR565_C3C = rgb565(208,  48, 208);
+constexpr uint16_t COLOR565_C3F = rgb565(208,  48, 248);
+constexpr uint16_t COLOR565_C60 = rgb565(208, 104,   0);
+constexpr uint16_t COLOR565_C63 = rgb565(208, 104,  48);
+constexpr uint16_t COLOR565_C66 = rgb565(208, 104, 104);
+constexpr uint16_t COLOR565_C69 = rgb565(208, 104, 152);
+constexpr uint16_t COLOR565_C6C = rgb565(208, 104, 208);
+constexpr uint16_t COLOR565_C6F = rgb565(208, 104, 248);
+constexpr uint16_t COLOR565_C90 = rgb565(208, 152,   0);
+constexpr uint16_t COLOR565_C93 = rgb565(208, 152,  48);
+constexpr uint16_t COLOR565_C96 = rgb565(208, 152, 104);
+constexpr uint16_t COLOR565_C99 = rgb565(208, 152, 152);
+constexpr uint16_t COLOR565_C9C = rgb565(208, 152, 208);
+constexpr uint16_t COLOR565_C9F = rgb565(208, 152, 248);
+constexpr uint16_t COLOR565_CC0 = rgb565(208, 208,   0);
+constexpr uint16_t COLOR565_CC3 = rgb565(208, 208,  48);
+constexpr uint16_t COLOR565_CC6 = rgb565(208, 208, 104);
+constexpr uint16_t COLOR565_CC9 = rgb565(208, 208, 152);
+constexpr uint16_t COLOR565_CCC = rgb565(208, 208, 208);
+constexpr uint16_t COLOR565_CCF = rgb565(208, 208, 248);
+constexpr uint16_t COLOR565_CF0 = rgb565(208, 248,   0);
+constexpr uint16_t COLOR565_CF3 = rgb565(208, 248,  48);
+constexpr uint16_t COLOR565_CF6 = rgb565(208, 248, 104);
+constexpr uint16_t COLOR565_CF9 = rgb565(208, 248, 152);
+constexpr uint16_t COLOR565_CFC = rgb565(208, 248, 208);
+constexpr uint16_t COLOR565_CFF = rgb565(208, 248, 248);
+constexpr uint16_t COLOR565_F00 = rgb565(248,   0,   0);
+constexpr uint16_t COLOR565_F03 = rgb565(248,   0,  48);
+constexpr uint16_t COLOR565_F06 = rgb565(248,   0, 104);
+constexpr uint16_t COLOR565_F09 = rgb565(248,   0, 152);
+constexpr uint16_t COLOR565_F0C = rgb565(248,   0, 208);
+constexpr uint16_t COLOR565_F0F = rgb565(248,   0, 248);
+constexpr uint16_t COLOR565_F30 = rgb565(248,  48,   0);
+constexpr uint16_t COLOR565_F33 = rgb565(248,  48,  48);
+constexpr uint16_t COLOR565_F36 = rgb565(248,  48, 104);
+constexpr uint16_t COLOR565_F39 = rgb565(248,  48, 152);
+constexpr uint16_t COLOR565_F3C = rgb565(248,  48, 208);
+constexpr uint16_t COLOR565_F3F = rgb565(248,  48, 248);
+constexpr uint16_t COLOR565_F60 = rgb565(248, 104,   0);
+constexpr uint16_t COLOR565_F63 = rgb565(248, 104,  48);
+constexpr uint16_t COLOR565_F66 = rgb565(248, 104, 104);
+constexpr uint16_t COLOR565_F69 = rgb565(248, 104, 152);
+constexpr uint16_t COLOR565_F6C = rgb565(248, 104, 208);
+constexpr uint16_t COLOR565_F6F = rgb565(248, 104, 248);
+constexpr uint16_t COLOR565_F90 = rgb565(248, 152,   0);
+constexpr uint16_t COLOR565_F93 = rgb565(248, 152,  48);
+constexpr uint16_t COLOR565_F96 = rgb565(248, 152, 104);
+constexpr uint16_t COLOR565_F99 = rgb565(248, 152, 152);
+constexpr uint16_t COLOR565_F9C = rgb565(248, 152, 208);
+constexpr uint16_t COLOR565_F9F = rgb565(248, 152, 248);
+constexpr uint16_t COLOR565_FC0 = rgb565(248, 208,   0);
+constexpr uint16_t COLOR565_FC3 = rgb565(248, 208,  48);
+constexpr uint16_t COLOR565_FC6 = rgb565(248, 208, 104);
+constexpr uint16_t COLOR565_FC9 = rgb565(248, 208, 152);
+constexpr uint16_t COLOR565_FCC = rgb565(248, 208, 208);
+constexpr uint16_t COLOR565_FCF = rgb565(248, 208, 248);
+constexpr uint16_t COLOR565_FF0 = rgb565(248, 248,   0);
+constexpr uint16_t COLOR565_FF3 = rgb565(248, 248,  48);
+constexpr uint16_t COLOR565_FF6 = rgb565(248, 248, 104);
+constexpr uint16_t COLOR565_FF9 = rgb565(248, 248, 152);
+constexpr uint16_t COLOR565_FFC = rgb565(248, 248, 208);
+constexpr uint16_t COLOR565_FFF = rgb565(248, 248, 248);
+// Common names (from color6.php) for a subset of the above -- pure aliases, not separate
+// constants, so using one costs exactly the same as using its raw hex constant directly.
+#define COLOR565_AQUAMARINE          COLOR565_6FC
+#define COLOR565_BLACK               COLOR565_000
+#define COLOR565_BLUE                COLOR565_00F
+#define COLOR565_BROWN               COLOR565_933
+#define COLOR565_BROWN3              COLOR565_C33
+#define COLOR565_BURLYWOOD1          COLOR565_FC9
+#define COLOR565_CADET_BLUE          COLOR565_699
+#define COLOR565_CHARTREUSE3         COLOR565_6C0
+#define COLOR565_CHARTREUSE4         COLOR565_390
+#define COLOR565_CHOCOLATE           COLOR565_C63
+#define COLOR565_CORAL               COLOR565_F66
+#define COLOR565_CORNFLOWER_BLUE     COLOR565_69F
+#define COLOR565_CRIMSON             COLOR565_C03
+#define COLOR565_CYAN                COLOR565_0FF
+#define COLOR565_DARK_BLUE           COLOR565_009
+#define COLOR565_DARK_CHARCOAL       COLOR565_333
+#define COLOR565_DARK_GOLDENROD      COLOR565_C90
+#define COLOR565_DARK_GREEN          COLOR565_060
+#define COLOR565_DARK_KHAKI          COLOR565_CC6
+#define COLOR565_DARK_OLIVE_GREEN    COLOR565_663
+#define COLOR565_DARK_OLIVE_GREEN1   COLOR565_CF6
+#define COLOR565_DARK_OLIVE_GREEN3   COLOR565_9C6
+#define COLOR565_DARK_ORANGE2        COLOR565_F60
+#define COLOR565_DARK_ORANGE3        COLOR565_C60
+#define COLOR565_DARK_ORCHID         COLOR565_93C
+#define COLOR565_DARK_ORCHID1        COLOR565_C3F
+#define COLOR565_DARK_SEA_GREEN      COLOR565_9C9
+#define COLOR565_DARK_SEA_GREEN1     COLOR565_CFC
+#define COLOR565_DARK_SEA_GREEN4     COLOR565_696
+#define COLOR565_DARK_SLATE_BLUE     COLOR565_339
+#define COLOR565_DARK_SLATE_GRAY     COLOR565_366
+#define COLOR565_DARK_SLATE_GRAY3    COLOR565_6CC
+#define COLOR565_DARK_TURQUOISE      COLOR565_0CC
+#define COLOR565_DARK_VIOLET         COLOR565_90C
+#define COLOR565_DEEP_PINK           COLOR565_F09
+#define COLOR565_DEEP_PINK3          COLOR565_C06
+#define COLOR565_DEEP_PINK4          COLOR565_906
+#define COLOR565_DEEP_SKY_BLUE       COLOR565_0CF
+#define COLOR565_DEEP_SKY_BLUE2      COLOR565_09F
+#define COLOR565_DEEP_SKY_BLUE3      COLOR565_09C
+#define COLOR565_DEEP_SKY_BLUE4      COLOR565_069
+#define COLOR565_DIM_GRAY            COLOR565_666
+#define COLOR565_DODGER_BLUE         COLOR565_39F
+#define COLOR565_DODGER_BLUE3        COLOR565_06C
+#define COLOR565_FIREBRICK1          COLOR565_F33
+#define COLOR565_FOREST_GREEN        COLOR565_393
+#define COLOR565_GOLD                COLOR565_FC0
+#define COLOR565_GOLD4               COLOR565_960
+#define COLOR565_GOLDENROD1          COLOR565_FC3
+#define COLOR565_GRAY                COLOR565_999
+#define COLOR565_GREEN               COLOR565_090
+#define COLOR565_GREEN3              COLOR565_0C0
+#define COLOR565_GREEN_YELLOW        COLOR565_9F3
+#define COLOR565_HOT_PINK            COLOR565_F6C
+#define COLOR565_HOT_PINK2           COLOR565_F69
+#define COLOR565_INDIAN_RED          COLOR565_C66
+#define COLOR565_INDIGO              COLOR565_309
+#define COLOR565_KHAKI               COLOR565_FF9
+#define COLOR565_LAWN_GREEN          COLOR565_6F0
+#define COLOR565_LEMON_CHIFFON       COLOR565_FFC
+#define COLOR565_LEMON_CHIFFON3      COLOR565_CC9
+#define COLOR565_LIGHT_CORAL         COLOR565_F99
+#define COLOR565_LIGHT_CYAN          COLOR565_CFF
+#define COLOR565_LIGHT_GOLDENROD4    COLOR565_993
+#define COLOR565_LIGHT_GRAY          COLOR565_CCC
+#define COLOR565_LIGHT_PINK1         COLOR565_F9C
+#define COLOR565_LIGHT_SALMON3       COLOR565_C96
+#define COLOR565_LIGHT_SEA_GREEN     COLOR565_399
+#define COLOR565_LIGHT_SKY_BLUE      COLOR565_9CF
+#define COLOR565_LIGHT_SLATE_BLUE    COLOR565_96F
+#define COLOR565_LIGHT_STEEL_BLUE    COLOR565_9CC
+#define COLOR565_LIGHT_STEEL_BLUE1   COLOR565_CCF
+#define COLOR565_LIGHT_YELLOW4       COLOR565_996
+#define COLOR565_LIME                COLOR565_0F0
+#define COLOR565_LIME_GREEN          COLOR565_3C3
+#define COLOR565_MAGENTA             COLOR565_F0F
+#define COLOR565_MAGENTA3            COLOR565_C0C
+#define COLOR565_MAROON              COLOR565_900
+#define COLOR565_MAROON1             COLOR565_F3C
+#define COLOR565_MEDIUM_AQUAMARINE   COLOR565_6C9
+#define COLOR565_MEDIUM_BLUE         COLOR565_00C
+#define COLOR565_MEDIUM_ORCHID2      COLOR565_C6F
+#define COLOR565_MEDIUM_PURPLE       COLOR565_96C
+#define COLOR565_MEDIUM_PURPLE1      COLOR565_99F
+#define COLOR565_MEDIUM_SEA_GREEN    COLOR565_3C6
+#define COLOR565_MEDIUM_SLATE_BLUE   COLOR565_66F
+#define COLOR565_MEDIUM_SPRING_GREEN COLOR565_0F9
+#define COLOR565_MEDIUM_VIOLET_RED   COLOR565_C09
+#define COLOR565_MIDNIGHT_BLUE       COLOR565_006
+#define COLOR565_OLIVE               COLOR565_990
+#define COLOR565_OLIVE_DRAB          COLOR565_693
+#define COLOR565_OLIVE_DRAB1         COLOR565_CF3
+#define COLOR565_ORANGE              COLOR565_F90
+#define COLOR565_ORANGE_RED          COLOR565_F30
+#define COLOR565_ORANGE_RED3         COLOR565_C30
+#define COLOR565_ORCHID              COLOR565_C6C
+#define COLOR565_ORCHID2             COLOR565_F6F
+#define COLOR565_ORCHID4             COLOR565_939
+#define COLOR565_PALE_GREEN          COLOR565_9F9
+#define COLOR565_PALE_GREEN3         COLOR565_6C6
+#define COLOR565_PALE_TURQUOISE      COLOR565_9FF
+#define COLOR565_PALE_VIOLET_RED     COLOR565_C69
+#define COLOR565_PERU                COLOR565_C93
+#define COLOR565_PINK                COLOR565_FCC
+#define COLOR565_PINK4               COLOR565_966
+#define COLOR565_PLUM                COLOR565_C9C
+#define COLOR565_PLUM1               COLOR565_FCF
+#define COLOR565_PLUM4               COLOR565_969
+#define COLOR565_PURPLE              COLOR565_909
+#define COLOR565_PURPLE1             COLOR565_93F
+#define COLOR565_PURPLE3             COLOR565_63C
+#define COLOR565_REBECCAPURPLE       COLOR565_639
+#define COLOR565_RED                 COLOR565_F00
+#define COLOR565_RED3                COLOR565_C00
+#define COLOR565_ROSY_BROWN          COLOR565_C99
+#define COLOR565_ROYAL_BLUE          COLOR565_36C
+#define COLOR565_ROYAL_BLUE2         COLOR565_36F
+#define COLOR565_SADDLE_BROWN        COLOR565_930
+#define COLOR565_SANDY_BROWN         COLOR565_F96
+#define COLOR565_SCARLET_FLAME       COLOR565_936
+#define COLOR565_SEA_GREEN           COLOR565_396
+#define COLOR565_SEA_GREEN1          COLOR565_6F9
+#define COLOR565_SEA_GREEN3          COLOR565_3C9
+#define COLOR565_SIENNA              COLOR565_963
+#define COLOR565_SKY_BLUE3           COLOR565_69C
+#define COLOR565_SLATE_BLUE          COLOR565_66C
+#define COLOR565_SLATE_GRAY4         COLOR565_669
+#define COLOR565_SPRING_GREEN        COLOR565_0F6
+#define COLOR565_SPRING_GREEN3       COLOR565_0C6
+#define COLOR565_SPRING_GREEN4       COLOR565_093
+#define COLOR565_STEEL_BLUE          COLOR565_39C
+#define COLOR565_STEEL_BLUE1         COLOR565_6CF
+#define COLOR565_STEEL_BLUE4         COLOR565_369
+#define COLOR565_TAN2                COLOR565_F93
+#define COLOR565_TEAL                COLOR565_099
+#define COLOR565_TOMATO              COLOR565_F63
+#define COLOR565_TURQUOISE           COLOR565_3CC
+#define COLOR565_VIOLET              COLOR565_F9F
+#define COLOR565_VIOLET_RED          COLOR565_C39
+#define COLOR565_VIOLET_RED1         COLOR565_F39
+#define COLOR565_VIOLET_RED3         COLOR565_C36
+#define COLOR565_WHITE               COLOR565_FFF
+#define COLOR565_YELLOW              COLOR565_FF0
+#define COLOR565_YELLOW3             COLOR565_CC0
+#define COLOR565_YELLOW_GREEN        COLOR565_9C3
 #endif // COLOR565_H
