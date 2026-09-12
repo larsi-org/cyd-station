@@ -481,20 +481,6 @@ String formatAge(unsigned long epoch) {
 }
 
 void drawSensors() {
-  tft.fillScreen(colorBg());
-
-  tft.setTextColor(colorHeader());
-  tft.setTextSize(2);
-  tft.setCursor(10, 6);
-  tft.println(config.stationPrefix);
-
-  if (totalPages() > 1) {
-    tft.setTextSize(1);
-    tft.setTextColor(colorMuted());
-    tft.setCursor(180, 12);
-    tft.print(String(currentPage + 1) + "/" + String(totalPages()));
-  }
-
   int y = 34;
   const int rowHeight = 25;
 
@@ -525,11 +511,6 @@ void drawSensors() {
 
     y += rowHeight;
   }
-
-  tft.setTextSize(1);
-  tft.setTextColor(colorMuted());
-  tft.setCursor(10, 305);
-  tft.print("Config: " + WiFi.localIP().toString());
 }
 
 // Stack of mini history graphs (config.graphChannels), one full-width row per channel, one extra
@@ -537,20 +518,6 @@ void drawSensors() {
 // from that channel's own min/max over the fetched window (fetchGraphData()) rather than any
 // fixed range, since a given slot could hold anything from a temperature to a wind speed.
 void drawGraphs() {
-  tft.fillScreen(colorBg());
-
-  tft.setTextColor(colorHeader());
-  tft.setTextSize(2);
-  tft.setCursor(10, 6);
-  tft.println(config.stationPrefix);
-
-  if (totalPages() > 1) {
-    tft.setTextSize(1);
-    tft.setTextColor(colorMuted());
-    tft.setCursor(180, 12);
-    tft.print(String(currentPage + 1) + "/" + String(totalPages()));
-  }
-
   const int areaTop = 34;
   const int areaBottom = 302;
   const int areaLeft = 12;
@@ -639,9 +606,25 @@ void drawGraphs() {
   }
 }
 
-// Dispatches to whichever page currentPage actually refers to, per config.displayMode -- see
-// totalPages() for how each mode's page count is derived.
+// Draws the header (station prefix, page-number indicator) and footer ("Config: <ip>") shared
+// by every page, then dispatches to whichever page currentPage actually refers to, per
+// config.displayMode -- see totalPages() for how each mode's page count is derived. Keeping the
+// shared chrome here means drawSensors()/drawGraphs() only ever draw their own page content.
 void drawCurrentPage() {
+  tft.fillScreen(colorBg());
+
+  tft.setTextColor(colorHeader());
+  tft.setTextSize(2);
+  tft.setCursor(10, 6);
+  tft.println(config.stationPrefix);
+
+  if (totalPages() > 1) {
+    tft.setTextSize(1);
+    tft.setTextColor(colorMuted());
+    tft.setCursor(180, 12);
+    tft.print(String(currentPage + 1) + "/" + String(totalPages()));
+  }
+
   if (config.displayMode == "graphs") {
     drawGraphs();
   } else if (config.displayMode == "text") {
@@ -651,4 +634,9 @@ void drawCurrentPage() {
   } else {
     drawSensors();
   }
+
+  tft.setTextSize(1);
+  tft.setTextColor(colorMuted());
+  tft.setCursor(10, 305);
+  tft.print("Config: " + WiFi.localIP().toString());
 }
