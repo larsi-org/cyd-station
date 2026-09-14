@@ -53,6 +53,11 @@
 
 #define SCREEN_ROTATION 0  // portrait; use 2 if mounted upside down
 
+// Shared right-edge margin -- drawGraphs()'s plot area already right-edges here; the header's
+// page indicator and drawSensors()'s age column are right-aligned to it too, via getTextBounds(),
+// so all three read as one consistent margin instead of each picking its own gap from the edge.
+const int RIGHT_MARGIN = 12;
+
 SPIClass hspi(HSPI);
 Adafruit_ILI9341 tft(&hspi, TFT_DC, TFT_CS, TFT_RST);
 
@@ -77,9 +82,10 @@ const int MAX_SENSORS = 64;  // weather stations report exactly 7 (channels 0-6)
                               // station no longer has to fit on one screen.
 
 // Sensors that don't fit on one page cycle automatically -- header stays put, only the rows
-// below it change. ROWS_PER_PAGE is derived from the portrait screen: (320 tall - 34 header -
-// 16 footer) / 25 per row.
-const int ROWS_PER_PAGE = 10;
+// below it change. ROWS_PER_PAGE is derived from the portrait screen: each row's own content
+// (label line + value line) is 25px tall, plus a 6px gap between rows (drawSensors()), against
+// (320 tall - 34 header - 16 footer) available -- n*25 + (n-1)*6 <= 271 maxes out at 8.
+const int ROWS_PER_PAGE = 8;
 const unsigned long PAGE_INTERVAL_MS = 10UL * 1000UL;  // 10 seconds per page
 unsigned long lastPageFlip = 0;
 int currentPage = 0;
@@ -483,6 +489,7 @@ String formatAge(unsigned long epoch) {
 void drawSensors() {
   int y = 34;
   const int rowHeight = 25;
+  const int gap = 6;  // matches drawGraphs()'s inter-row gap
 
   int first = currentPage * ROWS_PER_PAGE;
   int last = min(sensorCount, first + ROWS_PER_PAGE);
@@ -493,10 +500,14 @@ void drawSensors() {
     tft.setTextColor(colorLabel());
     tft.print(sensors[i].property);
 
-    tft.setCursor(165, y);
     if (readings[i].valid) {
+      String ageText = formatAge(readings[i].epoch);
+      int16_t abx, aby;
+      uint16_t abw, abh;
+      tft.getTextBounds(ageText, 0, 0, &abx, &aby, &abw, &abh);
+      tft.setCursor(tft.width() - RIGHT_MARGIN - abw, y);
       tft.setTextColor(colorMuted());
-      tft.print(formatAge(readings[i].epoch));
+      tft.print(ageText);
     }
 
     tft.setTextSize(2);
@@ -509,7 +520,7 @@ void drawSensors() {
       tft.print("no data");
     }
 
-    y += rowHeight;
+    y += rowHeight + gap;
   }
 }
 
@@ -521,11 +532,11 @@ void drawGraphs() {
   const int areaTop = 34;
   const int areaBottom = 302;
   const int areaLeft = 12;
-  const int areaRight = 228;
+  const int areaRight = tft.width() - RIGHT_MARGIN;
   const int gap = 6;
   const int cellWidth = areaRight - areaLeft;
   const int cellHeight = (areaBottom - areaTop - (NUM_GRAPHS - 1) * gap) / NUM_GRAPHS;
-  const int labelHeight = 20;
+  const int labelHeight = 10;  // one text row -- label and range now share it, see below
 
   for (int i = 0; i < NUM_GRAPHS; i++) {
     int cellX = areaLeft;
@@ -541,14 +552,18 @@ void drawGraphs() {
     tft.setCursor(cellX, cellY);
     tft.print(property);
 
-    tft.setCursor(cellX, cellY + 10);
-    if (graphHasData[i]) {
-      tft.setTextColor(colorMuted());
-      tft.print(String(graphGlobalMin[i], 1) + "-" + String(graphGlobalMax[i], 1) + " " + unit);
-    } else {
-      tft.setTextColor(colorError());
-      tft.print("no data");
-    }
+    // Range right-aligned on the same row as the label (mirrors drawSensors()'s
+    // label-left/age-right layout) rather than its own row, freeing labelHeight for the plot.
+    String rangeText = graphHasData[i]
+                            ? String(graphGlobalMin[i], 1) + "-" + String(graphGlobalMax[i], 1) +
+                                  " " + unit
+                            : "no data";
+    int16_t rbx, rby;
+    uint16_t rw, rh;
+    tft.getTextBounds(rangeText, 0, 0, &rbx, &rby, &rw, &rh);
+    tft.setTextColor(graphHasData[i] ? colorMuted() : colorError());
+    tft.setCursor(cellX + cellWidth - rw, cellY);
+    tft.print(rangeText);
 
     int plotX = cellX;
     int plotY = cellY + labelHeight;
@@ -621,8 +636,12 @@ void drawCurrentPage() {
   if (totalPages() > 1) {
     tft.setTextSize(1);
     tft.setTextColor(colorMuted());
-    tft.setCursor(180, 12);
-    tft.print(String(currentPage + 1) + "/" + String(totalPages()));
+    String pageText = String(currentPage + 1) + "/" + String(totalPages());
+    int16_t pbx, pby;
+    uint16_t pbw, pbh;
+    tft.getTextBounds(pageText, 0, 0, &pbx, &pby, &pbw, &pbh);
+    tft.setCursor(tft.width() - RIGHT_MARGIN - pbw, 12);
+    tft.print(pageText);
   }
 
   if (config.displayMode == "graphs") {
