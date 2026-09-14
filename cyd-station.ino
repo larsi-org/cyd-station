@@ -478,6 +478,22 @@ void drawStatus(const String &message) {
   tft.println(message);
 }
 
+// config.fahrenheit converts any channel reporting unit "C" (both sections' convention for
+// temperature/dew point, confirmed against json/sensors.php) for display -- the server always
+// sends Celsius regardless. F = C*9/5+32 is affine (scale + offset), so converting a value after
+// it's already been averaged/min/maxed gives the same result as converting every raw reading
+// first -- these two helpers only need to touch what's actually drawn, not graphColumns'
+// accumulation in fetchGraphData().
+float displayValue(float value, const String &unit) {
+  if (config.fahrenheit && unit == "C") return value * 9.0f / 5.0f + 32.0f;
+  return value;
+}
+
+String displayUnit(const String &unit) {
+  if (config.fahrenheit && unit == "C") return "F";
+  return unit;
+}
+
 String formatAge(unsigned long epoch) {
   if (epoch == 0) return "never";
   long ageSeconds = (long)time(nullptr) - (long)epoch;
@@ -514,7 +530,8 @@ void drawSensors() {
     tft.setCursor(10, y + 9);
     if (readings[i].valid) {
       tft.setTextColor(colorValue());
-      tft.print(String(readings[i].value, 1) + " " + sensors[i].unit);
+      tft.print(String(displayValue(readings[i].value, sensors[i].unit), 1) + " " +
+                 displayUnit(sensors[i].unit));
     } else {
       tft.setTextColor(colorError());
       tft.print("no data");
@@ -555,8 +572,9 @@ void drawGraphs() {
     // Range right-aligned on the same row as the label (mirrors drawSensors()'s
     // label-left/age-right layout) rather than its own row, freeing labelHeight for the plot.
     String rangeText = graphHasData[i]
-                            ? String(graphGlobalMin[i], 1) + "-" + String(graphGlobalMax[i], 1) +
-                                  " " + unit
+                            ? String(displayValue(graphGlobalMin[i], unit), 1) + "-" +
+                                  String(displayValue(graphGlobalMax[i], unit), 1) + " " +
+                                  displayUnit(unit)
                             : "no data";
     int16_t rbx, rby;
     uint16_t rw, rh;

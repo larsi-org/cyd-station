@@ -332,6 +332,7 @@ String buildStationFormPage() {
   // value").
   bool cameFromReload = server.hasArg("section");
   bool inverseDisplay = cameFromReload ? server.hasArg("inverseDisplay") : existing.inverseDisplay;
+  bool fahrenheit = cameFromReload ? server.hasArg("fahrenheit") : existing.fahrenheit;
 
   // The station <select>'s own current value rides along on the "Refresh Stations" GET reload
   // like any other form field, so the channel dropdowns can reflect whichever station is
@@ -393,6 +394,8 @@ String buildStationFormPage() {
   page += "<select id=\"stationSelect\" name=\"stationPrefix\">" + stationOptions + "</select>";
   page += "<label class=\"checkbox\"><input type=\"checkbox\" name=\"inverseDisplay\"" +
           String(inverseDisplay ? " checked" : "") + "> Inverse Display (white background)</label>";
+  page += "<label class=\"checkbox\"><input type=\"checkbox\" name=\"fahrenheit\"" +
+          String(fahrenheit ? " checked" : "") + "> Temperature in Fahrenheit</label>";
   page += "<label>Display</label><select name=\"displayMode\">";
   page += String("<option value=\"text\"") + (displayMode == "text" ? " selected" : "") +
           ">Text Only</option>";
@@ -485,6 +488,7 @@ void handleStationSave() {
   config.stationPrefix = stationPrefix;
   config.displayMode = displayMode;
   config.inverseDisplay = server.hasArg("inverseDisplay");  // absent entirely when unchecked
+  config.fahrenheit = server.hasArg("fahrenheit");
   for (uint8_t i = 0; i < 3; i++) {
     String argName = "graphChannel" + String(i);
     if (server.hasArg(argName) && server.arg(argName).length() > 0) {

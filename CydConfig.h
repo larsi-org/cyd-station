@@ -35,6 +35,11 @@ struct CydConfig {
   // darker text, instead of the default dark background. Doesn't gate hasStation()/hasWifi().
   bool inverseDisplay = false;
 
+  // Display-only preference: convert any channel reporting unit "C" (both sections' convention
+  // for temperature/dew point) to Fahrenheit for display. Off by default -- the server always
+  // reports Celsius regardless of this setting, so it's a pure render-time choice.
+  bool fahrenheit = false;
+
   // "text", "graphs", or "both" -- which pages loop() cycles through: just the paginated
   // value-list pages, just the one graphs page, or both in sequence. Defaults to "text" for a
   // brand-new device (matches the sketch's original, graphs-less behavior); an already-set
