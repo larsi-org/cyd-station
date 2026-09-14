@@ -233,6 +233,14 @@ std::vector<std::pair<String, String>> fetchStationList(const String &serverRoot
     }
   }
   client.stop();
+
+  // csv/locations.php isn't sorted by label server-side (weather's query has no ORDER BY at
+  // all; sensors' orders by prefix, not the display label) -- sort here so both sections come
+  // out alphabetically by station name regardless.
+  std::sort(stations.begin(), stations.end(),
+            [](const std::pair<String, String> &a, const std::pair<String, String> &b) {
+              return a.first < b.first;
+            });
   return stations;
 }
 
@@ -379,7 +387,10 @@ String buildStationFormPage() {
   page += String("<option value=\"sensors\"") + (section == "sensors" ? " selected" : "") +
           ">Sensors</option>";
   page += "</select>";
-  page += "<label>Station</label><select name=\"stationPrefix\">" + stationOptions + "</select>";
+  page += "<label>Station</label>";
+  page += "<input type=\"text\" id=\"stationFilter\" placeholder=\"Search stations...\" "
+          "autocomplete=\"off\" oninput=\"filterStations()\">";
+  page += "<select id=\"stationSelect\" name=\"stationPrefix\">" + stationOptions + "</select>";
   page += "<label class=\"checkbox\"><input type=\"checkbox\" name=\"inverseDisplay\"" +
           String(inverseDisplay ? " checked" : "") + "> Inverse Display (white background)</label>";
   page += "<label>Display</label><select name=\"displayMode\">";
@@ -399,7 +410,30 @@ String buildStationFormPage() {
   // reflects the change.
   page += "<button formmethod=\"get\" formaction=\"/\">Refresh Stations</button>";
   page += "<button formmethod=\"post\" formaction=\"/save\">Save &amp; Reboot</button>";
-  page += "</form></body></html>";
+  page += "</form>";
+  // Client-side filter over the already-fetched station list -- 304 stations makes the raw
+  // <select> painful to scroll, but the list is already fully in the DOM, so no extra round trip
+  // is needed. Options are moved (not cloned) between allStationOptions and the live <select>, so
+  // the originals -- value, selected state -- stay intact when they come back into view.
+  page += "<script>";
+  page += "var allStationOptions=null;";
+  page += "function filterStations(){";
+  page += "var sel=document.getElementById('stationSelect');";
+  page += "if(!allStationOptions)allStationOptions=Array.prototype.slice.call(sel.options);";
+  page += "var q=document.getElementById('stationFilter').value.toLowerCase();";
+  page += "var current=sel.value;";
+  page += "while(sel.options.length)sel.remove(0);";
+  page += "var matched=allStationOptions.filter(function(o){"
+          "return o.text.toLowerCase().indexOf(q)!==-1;});";
+  page += "if(matched.length===0){"
+          "var opt=document.createElement('option');"
+          "opt.value='';opt.text='No matching stations';sel.add(opt);"
+          "}else{matched.forEach(function(o){sel.add(o);});}";
+  page += "for(var i=0;i<sel.options.length;i++){"
+          "if(sel.options[i].value===current){sel.selectedIndex=i;break;}}";
+  page += "}";
+  page += "</script>";
+  page += "</body></html>";
   return page;
 }
 
