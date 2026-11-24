@@ -12,11 +12,13 @@
 
 #include <Arduino.h>
 
-// A section's API URL from a server root and a section: "https://larsi.org/" + "weather" ->
+// A section's API URL: the configured server root (the API's own base address, e.g.
+// "https://larsi.org/api/") plus the section: "https://larsi.org/api/" + "weather" ->
 // "https://larsi.org/api/weather/". Every endpoint is a name under it (sensors, current, data,
-// locations); the site still rewrites the old <section>/csv/... and <section>/json/... URLs.
+// locations). The firmware knows nothing else about the server's layout, so a node can be
+// pointed at any server that serves the same endpoints.
 inline String apiUrl(const String &serverRoot, const String &section) {
-  return serverRoot + "api/" + section + "/";
+  return serverRoot + section + "/";
 }
 
 struct CydConfig {
@@ -28,7 +30,7 @@ struct CydConfig {
   // CydPortal.cpp's fetchStationList()) rather than typed in, so it's always a real station.
   String stationPrefix;
 
-  // e.g. "https://larsi.org/" -- always ends with "/". Combined with section below to form the
+  // The API's base address, e.g. "https://larsi.org/api/" -- always ends with "/". Combined with section below to form the
   // URL API calls are built against (see baseUrl()). Kept separate from section rather than
   // storing one combined URL so the config page can offer section as a plain dropdown without
   // needing to parse it back out of a stored string.
@@ -82,8 +84,8 @@ void saveCydConfig(const CydConfig &config);
 // back to the portal.
 void clearCydConfig();
 
-// Splits a URL like "https://larsi.org/weather/" into a bare hostname ("larsi.org") and a base
-// path guaranteed to start and end with "/" ("/weather/"). Returns false (leaving host/basePath
+// Splits a URL like "https://larsi.org/api/weather/" into a bare hostname ("larsi.org") and a base
+// path guaranteed to start and end with "/" ("/api/weather/"). Returns false (leaving host/basePath
 // untouched) if no host is present at all, e.g. an empty or scheme-only URL.
 bool parseServerUrl(const String &url, String &host, String &basePath);
 

@@ -317,7 +317,7 @@ String buildStationFormPage() {
   String serverRoot = server.hasArg("serverRoot") ? server.arg("serverRoot")
                        : existing.serverRoot.length() > 0
                            ? existing.serverRoot
-                           : "https://larsi.org/";
+                           : "https://larsi.org/api/";
   if (!serverRoot.endsWith("/")) serverRoot += "/";
   String section = server.hasArg("section")   ? server.arg("section")
                     : existing.section.length() > 0 ? existing.section

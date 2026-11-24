@@ -33,8 +33,8 @@ form, no serial monitor needed:
    network, enter its password, save. Nothing else is asked here.
 2. **Station.** Once connected, the same config form stays reachable at the device's normal LAN
    IP (shown on screen as `Config: <ip>`) for as long as it's running -- no need to get the
-   device back into AP mode to change anything later. Set a Server Root (defaults to
-   `https://larsi.org/`) and a Section (Weather or Sensors), hit Refresh Stations to fetch that
+   device back into AP mode to change anything later. Set a Server Root, the API's base address (defaults to
+   `https://larsi.org/api/`; the section is added to it) and a Section (Weather or Sensors), hit Refresh Stations to fetch that
    section's real station list from the server, then pick one -- no free-text station entry.
    Pick a Display mode and a channel for each of the 3 Graph dropdowns (also live-fetched, from
    the currently-selected station) -- defaults to Text Only and channels 0-2.
