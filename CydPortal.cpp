@@ -25,6 +25,20 @@ DNSServer dnsServer;
 WebServer server(80);
 bool saved = false;
 
+// larsi.org's real favicon.ico (318 bytes), base64-inlined as a data URI -- avoids a separate
+// /favicon.ico route and the flash cost of a PROGMEM byte array, and the browser never makes a
+// second request for it, so it also sidesteps the AP-mode portal's auto-favicon-fetch otherwise
+// bouncing off handleNotFound()'s redirect back to "/". Re-derive with
+// `base64 -w0 favicon.ico` if the site's icon ever changes.
+const char *kFaviconLink =
+    "<link rel=\"icon\" type=\"image/x-icon\" href=\"data:image/x-icon;base64,"
+    "AAABAAEAEBAQAAAABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAA"
+    "ABAAAAD///8A//8AAP8A/wD/AAAAAP//AAD/AAAAAP8AgICAAMDAwACAgAAAgACAAIAAAAAAgIAA"
+    "AIAAAAAAgAAAAAAA//////////////////////////////////d3d3//////9///d//////3//"
+    "9///////f//3/3////9///f/9////3d3d//3////9///f/f/////////9//////3///3/////"
+    "/93d3//////////////////////////////////8AHwAAf88AAH/XAABgWwAAbx0AAG9eAABvT"
+    "gAAb1YAAGBWAAB3lgAAABYAAL3mAADeBgAA7/oAAPf8AAD4AAAA\">";
+
 String htmlEscape(const String &in) {
   String out;
   out.reserve(in.length());
@@ -119,6 +133,7 @@ String buildWifiFormPage() {
   String page;
   page += "<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">";
   page += "<title>CYD Wi-Fi Setup</title>";
+  page += kFaviconLink;
   page += "<style>body{font-family:sans-serif;max-width:420px;margin:2em auto;padding:0 1em}";
   page += "label{display:block;margin-top:1em;font-weight:bold}";
   page += "input,select{width:100%;padding:.4em;box-sizing:border-box;font-size:1em}";
@@ -370,6 +385,7 @@ String buildStationFormPage() {
   String page;
   page += "<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">";
   page += "<title>CYD Station Setup</title>";
+  page += kFaviconLink;
   page += "<style>body{font-family:sans-serif;max-width:420px;margin:2em auto;padding:0 1em}";
   page += "label{display:block;margin-top:1em;font-weight:bold}";
   page += "input,select{width:100%;padding:.4em;box-sizing:border-box;font-size:1em}";
@@ -392,10 +408,6 @@ String buildStationFormPage() {
   page += "<input type=\"text\" id=\"stationFilter\" placeholder=\"Search stations...\" "
           "autocomplete=\"off\" oninput=\"filterStations()\">";
   page += "<select id=\"stationSelect\" name=\"stationPrefix\">" + stationOptions + "</select>";
-  page += "<label class=\"checkbox\"><input type=\"checkbox\" name=\"inverseDisplay\"" +
-          String(inverseDisplay ? " checked" : "") + "> Inverse Display (white background)</label>";
-  page += "<label class=\"checkbox\"><input type=\"checkbox\" name=\"fahrenheit\"" +
-          String(fahrenheit ? " checked" : "") + "> Temperature in Fahrenheit</label>";
   page += "<label>Display</label><select name=\"displayMode\">";
   page += String("<option value=\"text\"") + (displayMode == "text" ? " selected" : "") +
           ">Text Only</option>";
@@ -407,6 +419,12 @@ String buildStationFormPage() {
   page += "<label>Graph 1</label>" + buildChannelSelect("graphChannel0", channels, graphChannels[0]);
   page += "<label>Graph 2</label>" + buildChannelSelect("graphChannel1", channels, graphChannels[1]);
   page += "<label>Graph 3</label>" + buildChannelSelect("graphChannel2", channels, graphChannels[2]);
+  // Display-preference checkboxes come last -- they're polish, not setup, unlike everything
+  // above them (connection/station identity, then what to show).
+  page += "<label class=\"checkbox\"><input type=\"checkbox\" name=\"fahrenheit\"" +
+          String(fahrenheit ? " checked" : "") + "> Temperature in Fahrenheit</label>";
+  page += "<label class=\"checkbox\"><input type=\"checkbox\" name=\"inverseDisplay\"" +
+          String(inverseDisplay ? " checked" : "") + "> Inverse Display (white background)</label>";
   // "Refresh Stations" (GET, reloads with whatever Server Root/Section are currently chosen)
   // comes first in the DOM so it's what fires on Enter -- pressing Enter while editing Server
   // Root should re-fetch the list, not accidentally save before the station selection even
