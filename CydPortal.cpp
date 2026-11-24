@@ -166,7 +166,7 @@ void handleWifiSave() {
 // Server root, section (weather/sensors), and station -- the station list is fetched live from
 // whichever section is currently selected, rather than typed in freehand.
 
-// Minimal quote-aware two-field CSV splitter -- csv/locations.php's station labels (city
+// Minimal quote-aware two-field CSV splitter -- api/<section>/locations' station labels (city
 // names) can contain commas, which the server quotes; only the first two columns (label,
 // prefix) are needed here, so this doesn't bother with the rest of the row.
 bool splitLocationLine(const String &line, String &label, String &prefix) {
@@ -196,7 +196,7 @@ bool splitLocationLine(const String &line, String &label, String &prefix) {
   return prefix.length() > 0;
 }
 
-// Live {label, prefix} pairs for one section, fetched from that section's csv/locations.php.
+// Live {label, prefix} pairs for one section, fetched from that section's api/<section>/locations.
 // Returns an empty list on any connect/parse failure -- the form just shows "no stations found"
 // rather than crashing; nothing here is critical-path for the device's normal operation.
 std::vector<std::pair<String, String>> fetchStationList(const String &serverRoot,
@@ -204,13 +204,13 @@ std::vector<std::pair<String, String>> fetchStationList(const String &serverRoot
   std::vector<std::pair<String, String>> stations;
 
   String host, basePath;
-  if (!parseServerUrl(serverRoot + section + "/", host, basePath)) return stations;
+  if (!parseServerUrl(apiUrl(serverRoot, section), host, basePath)) return stations;
 
   WiFiClientSecure client;
   client.setCACertBundle(kServerCertBundle, kServerCertBundleLen);
   if (!client.connect(host.c_str(), 443)) return stations;
 
-  client.print(String("GET ") + basePath + "csv/locations.php HTTP/1.1\r\n" + "Host: " + host +
+  client.print(String("GET ") + basePath + "locations HTTP/1.1\r\n" + "Host: " + host +
                "\r\n" + "User-Agent: cyd-station\r\n" + "Connection: close\r\n\r\n");
 
   while (client.connected()) {
@@ -234,7 +234,7 @@ std::vector<std::pair<String, String>> fetchStationList(const String &serverRoot
   }
   client.stop();
 
-  // csv/locations.php isn't sorted by label server-side (weather's query has no ORDER BY at
+  // api/<section>/locations isn't sorted by label server-side (weather's query has no ORDER BY at
   // all; sensors' orders by prefix, not the display label) -- sort here so both sections come
   // out alphabetically by station name regardless.
   std::sort(stations.begin(), stations.end(),
@@ -244,7 +244,7 @@ std::vector<std::pair<String, String>> fetchStationList(const String &serverRoot
   return stations;
 }
 
-// Live {channel, label} pairs for one station, fetched from that station's json/sensors.php --
+// Live {channel, label} pairs for one station, fetched from that station's api/<section>/sensors --
 // same endpoint and response shape cyd-station.ino's fetchStationMetadata() already parses, just
 // duplicated here since the portal's fetch needs to run against whatever station is currently
 // selected in the form, before that station is even saved. Returns an empty list on any
@@ -257,13 +257,13 @@ std::vector<std::pair<int, String>> fetchChannelList(const String &serverRoot,
   if (stationPrefix.length() == 0) return channels;
 
   String host, basePath;
-  if (!parseServerUrl(serverRoot + section + "/", host, basePath)) return channels;
+  if (!parseServerUrl(apiUrl(serverRoot, section), host, basePath)) return channels;
 
   WiFiClientSecure client;
   client.setCACertBundle(kServerCertBundle, kServerCertBundleLen);
   if (!client.connect(host.c_str(), 443)) return channels;
 
-  String path = basePath + "json/sensors.php?prefix=" + stationPrefix;
+  String path = basePath + "sensors?prefix=" + stationPrefix;
   client.print(String("GET ") + path + " HTTP/1.1\r\n" + "Host: " + host + "\r\n" +
                "User-Agent: cyd-station\r\n" + "Connection: close\r\n\r\n");
 
@@ -478,7 +478,7 @@ void handleStationSave() {
     return;
   }
   String unusedHost, unusedBasePath;  // just validating shape here -- baseUrl() does the real parse
-  if (!parseServerUrl(serverRoot + section + "/", unusedHost, unusedBasePath)) {
+  if (!parseServerUrl(apiUrl(serverRoot, section), unusedHost, unusedBasePath)) {
     server.send(400, "text/html", "<p>Server Root must include a hostname. <a href=\"/\">Back</a></p>");
     return;
   }

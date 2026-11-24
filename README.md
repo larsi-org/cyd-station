@@ -18,7 +18,7 @@ it's configured with, not a compile-time choice.
 The Display setting (Text Only, Graphs Only, or Text & Graphs -- defaults to Text Only) picks
 what auto-cycles onto the screen (10s per page): the paginated value-list pages, a single page
 with a stack of 3 mini history graphs (one full-width row per configurable channel, pulled from
-the same `csv/data.php` history endpoint the main site's own report pages use), or both in
+the same `api/<section>/data` history endpoint the main site's own report pages use), or both in
 sequence. Each graph auto-scales its own y-axis from the fetched window's min/max, and the
 lookback window itself is picked per section (6h for sensors' ~12/hr logging rate, 72h/3 days for
 weather's ~1/hr) so both land roughly one sample per column across the graph's 72 columns.

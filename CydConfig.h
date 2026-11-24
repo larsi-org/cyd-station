@@ -12,6 +12,13 @@
 
 #include <Arduino.h>
 
+// A section's API URL from a server root and a section: "https://larsi.org/" + "weather" ->
+// "https://larsi.org/api/weather/". Every endpoint is a name under it (sensors, current, data,
+// locations); the site still rewrites the old <section>/csv/... and <section>/json/... URLs.
+inline String apiUrl(const String &serverRoot, const String &section) {
+  return serverRoot + "api/" + section + "/";
+}
+
 struct CydConfig {
   static const uint8_t kMaxNetworks = 3;
   String ssids[kMaxNetworks];
@@ -28,7 +35,7 @@ struct CydConfig {
   String serverRoot;
 
   // "weather" or "sensors" -- which of larsi.org's two same-shaped APIs (channel list via
-  // json/sensors.php, latest values via csv/current.php) this device polls.
+  // api/<section>/sensors, latest values via api/<section>/current) this device polls.
   String section;
 
   // Display-only preference, unrelated to Wi-Fi/station completeness -- white background,
@@ -58,10 +65,10 @@ struct CydConfig {
     return stationPrefix.length() > 0 && serverRoot.length() > 0 && section.length() > 0;
   }
 
-  // The full section URL API calls are built against, e.g. "https://larsi.org/weather/". The
+  // The section's API URL calls are built against, e.g. "https://larsi.org/api/weather/". The
   // scheme is accepted but ignored by parseServerUrl() -- calls always go out over TLS on port
   // 443 regardless of what's stored here.
-  String baseUrl() const { return serverRoot + section + "/"; }
+  String baseUrl() const { return apiUrl(serverRoot, section); }
 };
 
 // Reads saved settings from NVS. Returns config.hasWifi() -- callers that also need station

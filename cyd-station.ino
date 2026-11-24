@@ -10,7 +10,7 @@
 // no audio -- just a display client.
 //
 // Works against either the weather or sensors section -- both speak the same API shape
-// (json/sensors.php?prefix=X for channel metadata, csv/current.php?prefix=X for latest values
+// (api/<section>/sensors?prefix=X for channel metadata, api/<section>/current?prefix=X for latest values
 // as channel,value,epoch rows), so which one this device shows is purely a matter of which
 // server URL it's configured with at setup time, not a compile-time choice.
 //
@@ -112,7 +112,7 @@ SensorReading readings[MAX_SENSORS];
 // exactly 3px wide against the 216px plot area (drawGraphs()'s 12px margins), with no fractional
 // pixel rounding -- and so each section's window lines up with one column per expected sample:
 // sensors log ~12/hr, so 6h gives ~1 sample/column; weather logs ~1/hr, so 72h (3 days) does the
-// same. See csv/data.php's shared t_min/t_max/sensors protocol for the fetch itself.
+// same. See api/<section>/data's since/until/sensors protocol for the fetch itself.
 const int NUM_GRAPHS = 3;
 const int GRAPH_COLUMNS = 72;
 const int GRID_SECTIONS = 3;  // vertical dividers -- 24h/section for weather, 2h/section for sensors
@@ -136,8 +136,8 @@ float graphGlobalMin[NUM_GRAPHS];
 float graphGlobalMax[NUM_GRAPHS];
 unsigned long graphTMin = 0;
 unsigned long graphWindowSeconds = 0;
-bool graphSkippedHeader = false;  // onGraphDataLine() state -- csv/data.php's first line is a
-                                   // header ("t,s,v"), unlike csv/current.php's onCurrentLine.
+bool graphSkippedHeader = false;  // onGraphDataLine() state -- api/<section>/data's first line
+                                   // is a header ("t,s,v"), unlike current's (onCurrentLine).
 
 // Tries each saved network in turn (CydConfig's up-to-3 list), most-recently-added first.
 // Returns false if none connect within timeoutMs each -- caller falls back to the setup portal.
@@ -312,7 +312,7 @@ bool fetchStationMetadata() {
     Serial.println("Connect failed");
     return false;
   }
-  String path = apiBasePath + "json/sensors.php?prefix=" + config.stationPrefix;
+  String path = apiBasePath + "sensors?prefix=" + config.stationPrefix;
   client.print(String("GET ") + path + " HTTP/1.1\r\n" +
                "Host: " + apiHost + "\r\n" +
                "User-Agent: cyd-station\r\n" +
@@ -365,17 +365,17 @@ void onCurrentLine(const String &line) {
 
 void fetchLatestReadings() {
   for (int i = 0; i < sensorCount; i++) readings[i] = SensorReading();
-  String path = apiBasePath + "csv/current.php?prefix=" + config.stationPrefix;
+  String path = apiBasePath + "current?prefix=" + config.stationPrefix;
   httpsGetLines(path, onCurrentLine);
 }
 
-// Bins one csv/data.php row (epoch,channel,value) into whichever graph slot(s) are configured
+// Bins one api/<section>/data row (epoch,channel,value) into whichever graph slot(s) are configured
 // for that channel -- same channel can appear in more than one slot, in which case it's binned
-// into each. Rows outside [graphTMin, graphTMin + graphWindowSeconds) shouldn't happen (that's
-// exactly the t_min/t_max fetchGraphData() requested) but are skipped rather than trusted, since
-// a slightly stale device clock could shift the window after the request was already sent.
+// into each. Rows outside [graphTMin, graphTMin + graphWindowSeconds) are skipped: the request
+// asks from graphTMin up to the server's now, so a reading newer than this device's clock (a
+// slightly stale clock) can come back and is dropped rather than drawn past the right edge.
 void onGraphDataLine(const String &line) {
-  if (!graphSkippedHeader) {  // csv/data.php's first line is always the "t,s,v" header row
+  if (!graphSkippedHeader) {  // the response's first line is always the "t,s,v" header row
     graphSkippedHeader = true;
     return;
   }
@@ -417,8 +417,10 @@ void fetchGraphData() {
 
   String sensorsParam = String(config.graphChannels[0]) + "," + String(config.graphChannels[1]) +
                          "," + String(config.graphChannels[2]);
-  String path = apiBasePath + "csv/data.php?prefix=" + config.stationPrefix +
-                "&sensors=" + sensorsParam + "&t_min=" + String(graphTMin) + "&t_max=" + String(tMax);
+  // since only, no until: the window runs up to the server's now. A response holds at most
+  // 50,000 timestamps, far more than the 72 h of weather or 6 h of sensors asked for here.
+  String path = apiBasePath + "data?prefix=" + config.stationPrefix +
+                "&sensors=" + sensorsParam + "&since=" + String(graphTMin);
   graphSkippedHeader = false;
   httpsGetLines(path, onGraphDataLine);
 
@@ -479,7 +481,7 @@ void drawStatus(const String &message) {
 }
 
 // config.fahrenheit converts any channel reporting unit "C" (both sections' convention for
-// temperature/dew point, confirmed against json/sensors.php) for display -- the server always
+// temperature/dew point, confirmed against api/<section>/sensors) for display -- the server always
 // sends Celsius regardless. F = C*9/5+32 is affine (scale + offset), so converting a value after
 // it's already been averaged/min/maxed gives the same result as converting every raw reading
 // first -- these two helpers only need to touch what's actually drawn, not graphColumns'
